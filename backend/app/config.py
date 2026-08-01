@@ -32,21 +32,8 @@ if _PGHOST:
     DATABASE_URL = (
         f"postgresql+psycopg2://{_PGUSER}:{_PGPASSWORD}@{_PGHOST}:{_PGPORT}/{_PGDATABASE}"
     )
-elif os.getenv("POSTGRES_URL"):
-    # Vercel Postgres support
-    DATABASE_URL = os.getenv("POSTGRES_URL")
-    if DATABASE_URL.startswith("postgres://"):
-        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
-    if "sslmode=" not in DATABASE_URL:
-        separator = "&" if "?" in DATABASE_URL else "?"
-        DATABASE_URL += f"{separator}sslmode=require"
 else:
-    if os.getenv("VERCEL"):
-        # Vercel's file system is read-only except for /tmp.
-        # This allows the app to start, but data will be ephemeral!
-        DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////tmp/vistaarwater.db")
-    else:
-        DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'vistaarwater.db'}")
+    DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'vistaarwater.db'}")
 
 # JWT Settings
 SECRET_KEY = os.getenv("SECRET_KEY", _read_env_file("SECRET_KEY", "dev-only-change-me"))
@@ -59,11 +46,10 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 GENERATED_DIR = STATIC_DIR / "generated"
 UPLOADS_DIR = STATIC_DIR / "uploads"
 
-# Create directories if they don't exist (may fail on read-only filesystems like Vercel)
 for dir_path in [STATIC_DIR, TEMPLATES_DIR, GENERATED_DIR, UPLOADS_DIR]:
     try:
         dir_path.mkdir(parents=True, exist_ok=True)
-    except Exception:
+    except OSError:
         pass
 
 # CORS
@@ -72,7 +58,7 @@ FRONTEND_URLS = [
     url.strip()
     for url in os.getenv(
         "FRONTEND_URLS",
-        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173,https://vistaar-shubh.vercel.app,https://vistaar-shubh-di0mfxal9-ansht025s-projects.vercel.app",
+        "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
     ).split(",")
     if url.strip()
 ]

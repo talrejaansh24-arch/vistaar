@@ -11,17 +11,16 @@ app = FastAPI(
 
 allowed_origins = list(dict.fromkeys([FRONTEND_URL, *FRONTEND_URLS]))
 
-# CORS – allow all *.vercel.app origins
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Static files (may not exist on Vercel – skip gracefully)
+# Static files (skip gracefully if missing)
 try:
     from pathlib import Path
     if Path(str(STATIC_DIR)).exists():
@@ -72,7 +71,6 @@ def debug():
         "db_error": db_error,
         "has_postgres_url": bool(os.getenv("POSTGRES_URL")),
         "has_pghost": bool(os.getenv("PGHOST")),
-        "vercel": bool(os.getenv("VERCEL")),
     }
 
 

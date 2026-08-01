@@ -32,5 +32,11 @@ studio-next/.next/
 .DS_Store
 Thumbs.db
 
+# Generated and uploaded static assets
+backend/static/generated/*
+!backend/static/generated/.gitkeep
+backend/static/uploads/*
+!backend/static/uploads/.gitkeep
+
 # Scratch folder
 scratch/

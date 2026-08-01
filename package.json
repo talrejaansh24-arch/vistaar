@@ -6,7 +6,7 @@
     "dev": "concurrently -n backend,frontend -c green,cyan \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "powershell -NoProfile -Command \"if (Test-Path 'backend/.venv/Scripts/python.exe') { & 'backend/.venv/Scripts/python.exe' -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --app-dir backend } else { python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --app-dir backend }\"",
     "dev:frontend": "npm --prefix frontend run dev -- --host 0.0.0.0 --port 5173",
-    "vercel-build": "cd frontend && npm install && npm run build && cd .. && rm -rf public && cp -r frontend/dist public"
+
   },
   "devDependencies": {
     "concurrently": "^10.0.3"
