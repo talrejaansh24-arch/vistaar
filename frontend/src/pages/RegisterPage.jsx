@@ -105,13 +105,16 @@ export default function RegisterPage() {
     tl.fromTo(footerRef.current, { opacity: 0 }, { opacity: 1, duration: 0.25 }, '<0.08');
   }, []);
 
-  // ── Register submit ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password.length < 6) { setError('Password must be at least 6 characters'); return; }
     setError(''); setLoading(true);
     try {
       const res = await authAPI.register(form);
+      if (typeof res.data === 'string' && res.data.includes('<html')) {
+        setError('Error: Your VITE_API_ORIGIN in Render is incorrect. It is pointing to the Frontend URL instead of the Backend URL.');
+        return;
+      }
       if (res.data.requires_otp) {
         setOtpEmail(res.data.email);
         setResendCooldown(30);
@@ -119,9 +122,11 @@ export default function RegisterPage() {
       } else if (res.data.access_token) {
         setAuth(res.data.user, res.data.access_token);
         navigate('/dashboard');
+      } else {
+        setError('Unexpected response from server.');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed');
+      setError(err.response?.data?.detail || err.message || 'Registration failed');
     } finally { setLoading(false); }
   };
 

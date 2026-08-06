@@ -216,26 +216,31 @@ export default function LoginPage() {
     });
   };
 
-  // ── Login submit ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); setLoading(true);
     try {
       const res = await authAPI.login(form);
+      if (typeof res.data === 'string' && res.data.includes('<html')) {
+        setError('Error: Your VITE_API_ORIGIN in Render is incorrect. It is pointing to the Frontend URL instead of the Backend URL.');
+        return;
+      }
       if (res.data.requires_otp) {
         setOtpEmail(res.data.email);
         setResendCooldown(30);
         animateToOtp();
-      } else {
+      } else if (res.data.access_token) {
         setAuth(res.data.user, res.data.access_token);
         // Check for pending design first
         const handled = await handlePendingDesign();
         if (!handled) {
           navigate(res.data.user?.role === 'admin' ? '/admin' : '/dashboard');
         }
+      } else {
+        setError('Unexpected response from server.');
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed');
+      setError(err.response?.data?.detail || err.message || 'Login failed');
     } finally { setLoading(false); }
   };
 
