@@ -3,11 +3,12 @@ import DesignCard from './DesignCard';
 import { waveAnimation } from '../utils/animations';
 import './DesignGrid.css';
 
-export default function DesignGrid({ designs }) {
+export default function DesignGrid({ designs = [] }) {
   const gridRef = useRef(null);
   const [showAll, setShowAll] = useState(false);
 
-  const visibleDesigns = showAll ? designs : designs.slice(0, 3);
+  const safeDesigns = Array.isArray(designs) ? designs : [];
+  const visibleDesigns = showAll ? safeDesigns : safeDesigns.slice(0, 3);
 
   useEffect(() => {
     if (gridRef.current && visibleDesigns.length > 0) {
