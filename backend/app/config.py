@@ -86,9 +86,9 @@ BULK_DISCOUNT_TIERS = [
 # SMTP Email Settings
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", _read_env_file("SMTP_USER", ""))
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", _read_env_file("SMTP_PASSWORD", ""))
-SENDER_EMAIL = os.getenv("SENDER_EMAIL", _read_env_file("SENDER_EMAIL", ""))
+SMTP_USER = os.getenv("SMTP_USER", _read_env_file("SMTP_USER", "talrejaansh24@gmail.com"))
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", _read_env_file("SMTP_PASSWORD", "gkco lmdr dvcw umfc"))
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", _read_env_file("SENDER_EMAIL", "talrejaansh24@gmail.com"))
 
 # Google OAuth
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", _read_env_file("GOOGLE_CLIENT_ID", ""))

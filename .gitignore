@@ -19,8 +19,7 @@ frontend/dist/
 studio-next/.next/
 .venv_test/
 
-# Local configuration files
-.env
+# Local configuration file
 .env.local
 .env.development.local
 .env.test.local
