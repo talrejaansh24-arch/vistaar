@@ -243,9 +243,10 @@ export default function AdminPage() {
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td><strong>#{o.id}</strong></td>
+                  <td>{users.find((u) => u.id === o.user_id)?.email || 'Unknown'}</td>
                   <td><span className={`badge ${statusColors[o.status]}`}>{o.status}</span></td>
                   <td>₹{o.total_price.toLocaleString()}</td>
-                  <td>{o.items.length} items (Bulk Bottles)</td>
+                  <td>{o.items?.length || 0} items (Bulk Bottles)</td>
                   <td>{new Date(o.created_at).toLocaleDateString()}</td>
                   <td>
                     <select 

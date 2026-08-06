@@ -44,7 +44,7 @@ export default function DashboardPage() {
                 <span className={`badge ${statusColors[order.status] || 'badge-info'}`}>{order.status}</span>
               </div>
               <div className="order-details">
-                <span>Items: {order.items.length}</span>
+                <span>Items: {order.items?.length || 0}</span>
                 <span>Total: ₹{order.total_price.toLocaleString()}</span>
                 <span>{new Date(order.created_at).toLocaleDateString()}</span>
               </div>
