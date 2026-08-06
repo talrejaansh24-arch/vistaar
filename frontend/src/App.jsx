@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -17,7 +17,7 @@ function App() {
   const { loading } = useStore();
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       {loading && (
         <div className="loading-overlay">
           <div className="loading-logo">💧</div>
@@ -41,7 +41,7 @@ function App() {
         </Routes>
       </main>
       <Footer />
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
