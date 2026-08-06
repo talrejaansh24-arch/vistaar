@@ -8,5 +8,8 @@ export default defineConfig({
       '/api': 'http://localhost:8000',
       '/static': 'http://localhost:8000',
     }
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
   }
 })

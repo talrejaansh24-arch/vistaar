@@ -7,6 +7,7 @@ import {
   RotateCcw, Undo2, Redo2, Trash2, Sliders, Layers, FlipHorizontal, Copy,
   LayoutTemplate, Type, Palette, UploadCloud, Square, Images, Video, QrCode, PlayCircle, Code, Share2, Save, Download, Printer
 } from 'lucide-react';
+import gsap from 'gsap';
 import './EditorPage.css';
 
 const BOTTLE_SIZES = [
@@ -2115,12 +2116,10 @@ export default function EditorPage() {
   const triggerAnimate = () => {
     const canvasEl = document.querySelector('.canvas-stage canvas');
     if (canvasEl) {
-      import('gsap').then(({ gsap }) => {
-        gsap.fromTo(canvasEl, 
-          { scale: 1 }, 
-          { scale: 1.03, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut" }
-        );
-      });
+      gsap.fromTo(canvasEl, 
+        { scale: 1 }, 
+        { scale: 1.03, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut" }
+      );
     }
   };
 
