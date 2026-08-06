@@ -1,8 +1,13 @@
 import { create } from 'zustand';
 
+const safeJSONParse = (item, fallback) => {
+  if (!item || item === 'undefined') return fallback;
+  try { return JSON.parse(item); } catch (e) { return fallback; }
+};
+
 const useStore = create((set, get) => ({
   // Auth
-  user: JSON.parse(localStorage.getItem('vistaarwater_user') || 'null'),
+  user: safeJSONParse(localStorage.getItem('vistaarwater_user'), null),
   token: localStorage.getItem('vistaarwater_token') || null,
   setAuth: (user, token) => {
     localStorage.setItem('vistaarwater_user', JSON.stringify(user));
@@ -26,7 +31,7 @@ const useStore = create((set, get) => ({
   setCurrentDesign: (design) => set({ currentDesign: design }),
 
   // Cart
-  cart: JSON.parse(localStorage.getItem('vistaarwater_cart') || '[]'),
+  cart: safeJSONParse(localStorage.getItem('vistaarwater_cart'), []),
   addToCart: (item) => {
     const cart = [...get().cart, { ...item, cartId: Date.now() }];
     localStorage.setItem('vistaarwater_cart', JSON.stringify(cart));
