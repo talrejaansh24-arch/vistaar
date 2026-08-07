@@ -94,20 +94,25 @@ def debug_email():
 @app.get("/{full_path:path}")
 def serve_spa(full_path: str):
     """
-    Catch-all route: serves the React index.html for any non-API path.
-    This makes React Router (HashRouter) work perfectly on a single domain.
-    The path must not start with 'api', 'static', or 'assets' (those are
-    handled by FastAPI routes / StaticFiles mounts above).
+    Catch-all: serves files from frontend_dist if they exist,
+    otherwise serves index.html for React Router (SPA fallback).
     """
-    # Don't intercept API or static file paths
+    # Never intercept API or backend static routes
     if full_path.startswith(("api/", "static/", "assets/")):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Not found")
 
+    # Check if a real file exists in dist (logo.png, favicon.svg, icons.svg, etc.)
+    requested_file = _FRONTEND_DIST / full_path
+    if requested_file.exists() and requested_file.is_file():
+        return FileResponse(str(requested_file))
+
+    # Fallback — serve index.html for all React routes (HashRouter)
     index_file = _FRONTEND_DIST / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))
-    return {"message": "Frontend not built. Run build.sh to generate dist."}
+
+    return {"message": "Frontend not built. Run build first."}
 
 
 @app.get("/api/debug")

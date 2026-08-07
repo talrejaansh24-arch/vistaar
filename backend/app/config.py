@@ -90,5 +90,13 @@ SMTP_USER = os.getenv("SMTP_USER", _read_env_file("SMTP_USER", "talrejaansh24@gm
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", _read_env_file("SMTP_PASSWORD", "gkco lmdr dvcw umfc"))
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", _read_env_file("SENDER_EMAIL", "talrejaansh24@gmail.com"))
 
+# Ensure password is never empty — guaranteed fallback
+if not SMTP_PASSWORD or SMTP_PASSWORD.strip() == "":
+    SMTP_PASSWORD = "gkco lmdr dvcw umfc"
+if not SMTP_USER or SMTP_USER.strip() == "":
+    SMTP_USER = "talrejaansh24@gmail.com"
+if not SENDER_EMAIL or SENDER_EMAIL.strip() == "":
+    SENDER_EMAIL = "talrejaansh24@gmail.com"
+
 # Google OAuth
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", _read_env_file("GOOGLE_CLIENT_ID", ""))
