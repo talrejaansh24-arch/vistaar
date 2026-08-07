@@ -42,16 +42,23 @@ app.include_router(admin.router)
 
 
 # ── Serve React frontend dist ──
-# The frontend is built to frontend/dist by build.sh.
-# We mount it so FastAPI serves the React app on the same domain.
-_FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
+# In Docker (production): Dockerfile copies frontend/dist → /app/frontend_dist
+# In local dev:           frontend/dist is at ../../frontend/dist relative to this file
+_APP_DIR = Path(__file__).parent.parent  # /app in Docker, vistaar/backend in dev
+_FRONTEND_DIST = (
+    _APP_DIR / "frontend_dist"           # Docker production path
+    if (_APP_DIR / "frontend_dist").exists()
+    else _APP_DIR.parent / "frontend" / "dist"  # Local dev path
+)
 
 if _FRONTEND_DIST.exists():
     # Serve static assets (JS, CSS, images) under /assets
-    app.mount("/assets", StaticFiles(directory=str(_FRONTEND_DIST / "assets")), name="frontend-assets")
+    _assets_dir = _FRONTEND_DIST / "assets"
+    if _assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="frontend-assets")
     print(f"[startup] Serving React frontend from: {_FRONTEND_DIST}")
 else:
-    print(f"[startup] WARNING: Frontend dist not found at {_FRONTEND_DIST}. Run build.sh first.")
+    print(f"[startup] WARNING: Frontend dist not found at {_FRONTEND_DIST}. Run build first.")
 
 
 @app.get("/")

@@ -1,24 +1,28 @@
 version: '3.8'
 
 services:
-  backend:
+  app:
     build:
-      context: ./backend
+      context: .          # Root of the repo — uses the root Dockerfile
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
       - PORT=8000
+      # ── Database ──
+      # For local dev with SQLite, leave DATABASE_URL unset (auto-uses SQLite).
+      # For Postgres, set it here or in a .env file:
+      # - DATABASE_URL=postgresql+pg8000://user:pass@host/dbname
+      - DATABASE_URL=${DATABASE_URL:-}
+      # ── Email (OTP) ──
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SENDER_EMAIL=${SENDER_EMAIL:-}
+      # ── Auth ──
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey_change_in_production}
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "5173:5173"
-    environment:
-      - PORT=5173
-    depends_on:
-      - backend
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
