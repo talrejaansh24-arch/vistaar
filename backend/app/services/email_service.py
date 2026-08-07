@@ -2,64 +2,154 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formatdate, make_msgid
 from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SENDER_EMAIL
 
 
 def send_otp_email(to_email: str, otp_code: str) -> bool:
     """
-    Sends an OTP email using smtplib.
-    Tries SSL (port 465) first, falls back to STARTTLS (port 587).
+    Sends a professional OTP email.
+    Includes both plain-text and HTML parts to avoid spam filters.
+    Tries SSL (port 465) first, then falls back to STARTTLS (port 587).
     """
-    if not SMTP_PASSWORD or SMTP_PASSWORD == "your-app-password-here":
+    if not SMTP_PASSWORD or SMTP_PASSWORD.strip() == "":
         print(f"WARNING: SMTP_PASSWORD not set. OTP {otp_code} for {to_email} NOT sent.")
         return False
 
+    # ── Build the email message ──
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = "Your VistaarWater Verification Code"
+    msg["Subject"] = f"{otp_code} is your VistaarWater verification code"
     msg["From"] = f"VistaarWater <{SENDER_EMAIL}>"
     msg["To"] = to_email
+    msg["Reply-To"] = SENDER_EMAIL
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain="vistaarwater.com")
+    # Anti-spam headers
+    msg["X-Mailer"] = "VistaarWater Mailer"
+    msg["MIME-Version"] = "1.0"
 
-    html_content = f"""
-    <html>
-      <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <h2 style="color: #00b894;">VistaarWater</h2>
-        </div>
-        <div style="background-color: #f9f9f9; border-radius: 8px; padding: 30px; text-align: center;">
-          <h3 style="margin-top: 0;">Your Verification Code</h3>
-          <p>Please use the following 6-digit code to complete your login/signup process.</p>
-          <div style="background-color: #fff; border: 2px dashed #00b894; border-radius: 8px; padding: 15px; margin: 20px 0;">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #00b894;">{otp_code}</span>
-          </div>
-          <p style="font-size: 14px; color: #666;">This code is valid for 10 minutes. Do not share this code with anyone.</p>
-        </div>
-      </body>
-    </html>
-    """
+    # ── Plain text version (very important — spam filters prefer emails with both) ──
+    plain_text = f"""
+VistaarWater — Verification Code
 
-    msg.attach(MIMEText(html_content, "html"))
+Your one-time verification code is: {otp_code}
 
-    # Strategy 1: Try SSL on port 465 (works on most cloud hosts like Render)
+This code is valid for 10 minutes.
+Do not share this code with anyone.
+
+If you did not request this code, please ignore this email.
+
+— VistaarWater Team
+    """.strip()
+
+    # ── HTML version ──
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VistaarWater Verification Code</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f7fa;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7fa;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="500" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#00b894,#00cec9);padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:1px;">VistaarWater</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Custom Branded Water Bottle Platform</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 30px;">
+              <p style="margin:0 0 12px;font-size:16px;color:#333;">Hello,</p>
+              <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.6;">
+                We received a request to verify your email address for your VistaarWater account.
+                Use the code below to complete the process:
+              </p>
+
+              <!-- OTP Box -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:24px 0;">
+                    <div style="display:inline-block;background:#f0fdf9;border:2px dashed #00b894;border-radius:12px;padding:20px 48px;">
+                      <span style="font-size:42px;font-weight:800;letter-spacing:10px;color:#00b894;font-family:'Courier New',monospace;">{otp_code}</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:20px 0 0;font-size:14px;color:#888;text-align:center;">
+                ⏱ This code expires in <strong>10 minutes</strong>
+              </p>
+
+              <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
+
+              <p style="margin:0;font-size:13px;color:#aaa;text-align:center;">
+                If you didn't request this code, you can safely ignore this email.<br>
+                Someone may have typed your email address by mistake.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
+              <p style="margin:0;font-size:12px;color:#bbb;">
+                &copy; 2024 VistaarWater &nbsp;|&nbsp; B2B Custom Water Bottle Design Platform<br>
+                This is an automated message — please do not reply directly to this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+    # Attach both parts — plain text FIRST (spam filter requirement)
+    msg.attach(MIMEText(plain_text, "plain", "utf-8"))
+    msg.attach(MIMEText(html_content, "html", "utf-8"))
+
+    # -- Strategy 1: SSL on port 465 (most reliable on cloud hosts like Render) --
     try:
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_HOST, 465, context=context) as server:
+        with smtplib.SMTP_SSL(SMTP_HOST, 465, context=context, timeout=15) as server:
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print(f"[Email] OTP sent via SSL to {to_email}")
+        print(f"[Email] OTP sent via SSL/465 to {to_email}")
         return True
+    except ssl.SSLCertVerificationError:
+        # Local dev on Windows may have missing root certs — try without verification
+        try:
+            context = ssl._create_unverified_context()
+            with smtplib.SMTP_SSL(SMTP_HOST, 465, context=context, timeout=15) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
+            print(f"[Email] OTP sent via SSL/465 (unverified) to {to_email}")
+            return True
+        except Exception as e2:
+            print(f"[Email] SSL/465 (unverified) also failed: {e2}. Trying STARTTLS/587...")
     except Exception as ssl_err:
-        print(f"[Email] SSL (port 465) failed: {ssl_err}. Trying STARTTLS (port 587)...")
+        print(f"[Email] SSL/465 failed: {ssl_err}. Trying STARTTLS/587...")
 
-    # Strategy 2: Fallback to STARTTLS on port 587
+    # -- Strategy 2: STARTTLS on port 587 (fallback) --
     try:
         with smtplib.SMTP(SMTP_HOST, 587, timeout=15) as server:
             server.ehlo()
-            server.starttls()
+            server.starttls(context=ssl.create_default_context())
             server.ehlo()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print(f"[Email] OTP sent via STARTTLS to {to_email}")
+        print(f"[Email] OTP sent via STARTTLS/587 to {to_email}")
         return True
     except Exception as tls_err:
-        print(f"[Email] STARTTLS (port 587) also failed: {tls_err}")
+        print(f"[Email] Both methods failed. STARTTLS error: {tls_err}")
         return False
