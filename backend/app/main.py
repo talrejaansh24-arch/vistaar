@@ -76,6 +76,21 @@ def health():
     return {"status": "healthy"}
 
 
+@app.get("/api/debug/email")
+def debug_email():
+    """Test endpoint — sends a test OTP email to the configured SMTP_USER address."""
+    from app.config import SMTP_USER, SMTP_PASSWORD, SENDER_EMAIL, SMTP_HOST
+    from app.services.email_service import send_otp_email
+    result = send_otp_email(SMTP_USER, "999999")
+    return {
+        "email_sent": result,
+        "smtp_host": SMTP_HOST,
+        "smtp_user": SMTP_USER,
+        "sender": SENDER_EMAIL,
+        "smtp_password_set": bool(SMTP_PASSWORD and SMTP_PASSWORD != "your-app-password-here"),
+    }
+
+
 @app.get("/{full_path:path}")
 def serve_spa(full_path: str):
     """
