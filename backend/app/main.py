@@ -1,6 +1,9 @@
+import os
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.config import FRONTEND_URL, FRONTEND_URLS, STATIC_DIR
 
 app = FastAPI(
@@ -38,14 +41,50 @@ app.include_router(inquiries.router)
 app.include_router(admin.router)
 
 
+# ── Serve React frontend dist ──
+# The frontend is built to frontend/dist by build.sh.
+# We mount it so FastAPI serves the React app on the same domain.
+_FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+if _FRONTEND_DIST.exists():
+    # Serve static assets (JS, CSS, images) under /assets
+    app.mount("/assets", StaticFiles(directory=str(_FRONTEND_DIST / "assets")), name="frontend-assets")
+    print(f"[startup] Serving React frontend from: {_FRONTEND_DIST}")
+else:
+    print(f"[startup] WARNING: Frontend dist not found at {_FRONTEND_DIST}. Run build.sh first.")
+
+
 @app.get("/")
 def root():
+    """Serve React index.html at root, or fall back to API status."""
+    index_file = _FRONTEND_DIST / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
     return {"message": "VistaarWater API is running", "version": "1.0.0"}
 
 
 @app.get("/api/health")
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/{full_path:path}")
+def serve_spa(full_path: str):
+    """
+    Catch-all route: serves the React index.html for any non-API path.
+    This makes React Router (HashRouter) work perfectly on a single domain.
+    The path must not start with 'api', 'static', or 'assets' (those are
+    handled by FastAPI routes / StaticFiles mounts above).
+    """
+    # Don't intercept API or static file paths
+    if full_path.startswith(("api/", "static/", "assets/")):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Not found")
+
+    index_file = _FRONTEND_DIST / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    return {"message": "Frontend not built. Run build.sh to generate dist."}
 
 
 @app.get("/api/debug")
