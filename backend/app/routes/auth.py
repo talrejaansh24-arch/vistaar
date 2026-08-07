@@ -2,6 +2,7 @@ import random
 import json
 import urllib.request
 import urllib.error
+import threading
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -15,21 +16,30 @@ from app.config import GOOGLE_CLIENT_ID
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+def _send_otp_background(email: str, otp_code: str):
+    """Send OTP email in a background thread so API doesn't block."""
+    try:
+        send_otp_email(email, otp_code)
+    except Exception as e:
+        print(f"[OTP Email] Background send failed for {email}: {e}")
+
+
 def _generate_and_send_otp(email: str, db: Session) -> str:
-    """Generate a 6-digit OTP, store it, and send it via email."""
+    """Generate a 6-digit OTP, store it in DB, and send email in background."""
     otp_code = str(random.randint(100000, 999999))
     expires_at = datetime.utcnow() + timedelta(minutes=10)
-    
+
     # Invalidate previous unused OTPs for this email
     db.query(OTP).filter(OTP.email == email, OTP.is_used == False).update({"is_used": True})
-    
+
     new_otp = OTP(email=email, otp_code=otp_code, expires_at=expires_at)
     db.add(new_otp)
     db.commit()
-    
-    # Send email (non-blocking, won't fail hard if SMTP not configured)
-    send_otp_email(email, otp_code)
-    print(f"[OTP] Generated OTP {otp_code} for {email}")
+
+    # Send email in background thread — API returns immediately
+    thread = threading.Thread(target=_send_otp_background, args=(email, otp_code), daemon=True)
+    thread.start()
+    print(f"[OTP] Generated OTP {otp_code} for {email} (email sending in background)")
     return otp_code
 
 

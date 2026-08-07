@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { authAPI, designAPI, API_ORIGIN } from '../api/client';
 import useStore from '../store/useStore';
+import logoImg from '/logo.png';
 import './AuthPages.css';
 
 /* ── Google SVG Icon ── */
@@ -369,7 +370,7 @@ export default function LoginPage() {
       <div className="auth-right">
         <div className="auth-card" ref={cardRef}>
           <div className="auth-brand" ref={brandRef}>
-            <img src="/logo.png" alt="VistaarWater Logo" style={{ height: '28px', borderRadius: '50%', marginRight: '8px' }} />
+            <img src={logoImg} alt="VistaarWater Logo" style={{ height: '28px', borderRadius: '50%', marginRight: '8px' }} />
             <span className="auth-brand-name">VISTAARWATER</span>
           </div>
 

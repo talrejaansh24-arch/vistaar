@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from app.config import FRONTEND_URL, FRONTEND_URLS, STATIC_DIR
+from app.config import STATIC_DIR
 
 app = FastAPI(
     title="VistaarWater API",
@@ -12,24 +12,22 @@ app = FastAPI(
     version="1.0.0",
 )
 
-allowed_origins = list(dict.fromkeys([FRONTEND_URL, *FRONTEND_URLS]))
-
-# CORS
+# CORS — allow all origins since frontend is served from the same domain in production
+# In local dev the proxy handles this, so this is safe.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Static files (skip gracefully if missing)
+# Backend /static (uploaded images, generated designs, product images)
 try:
-    from pathlib import Path
     if Path(str(STATIC_DIR)).exists():
         app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 except Exception as e:
-    print(f"Warning: Could not mount static files: {e}")
+    print(f"Warning: Could not mount /static: {e}")
 
 # Include routes
 from app.routes import auth, designs, orders, products, inquiries, admin
@@ -52,10 +50,13 @@ _FRONTEND_DIST = (
 )
 
 if _FRONTEND_DIST.exists():
-    # Serve static assets (JS, CSS, images) under /assets
+    # Mount /assets (Vite JS/CSS bundles)
     _assets_dir = _FRONTEND_DIST / "assets"
     if _assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(_assets_dir)), name="frontend-assets")
+    # Mount root-level public files: logo.png, favicon.svg, icons.svg etc.
+    # These are files Vite copies from /public directly into dist/
+    app.mount("/public-files", StaticFiles(directory=str(_FRONTEND_DIST)), name="frontend-root-files")
     print(f"[startup] Serving React frontend from: {_FRONTEND_DIST}")
 else:
     print(f"[startup] WARNING: Frontend dist not found at {_FRONTEND_DIST}. Run build first.")

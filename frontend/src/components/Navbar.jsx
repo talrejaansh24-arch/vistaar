@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import useStore from '../store/useStore';
 import { navbarScrollEffect, cartBounce } from '../utils/animations';
+import logoImg from '/logo.png';
 import './Navbar.css';
 
 export default function Navbar() {
@@ -31,7 +32,7 @@ export default function Navbar() {
     <nav className="navbar glass" ref={navRef}>
       <div className="container navbar-inner">
         <Link to="/" className="navbar-brand">
-          <img src="/logo.png" alt="VistaarWater Logo" className="navbar-logo" />
+          <img src={logoImg} alt="VistaarWater Logo" className="navbar-logo" />
           <span className="brand-text">Vist<span className="gradient-text">aarWater</span></span>
         </Link>
 
