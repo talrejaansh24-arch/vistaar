@@ -1,3 +1,6 @@
+import os
+import json
+import urllib.request
 import smtplib
 import ssl
 from email.mime.text import MIMEText
@@ -9,26 +12,16 @@ from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SENDER_EM
 def send_otp_email(to_email: str, otp_code: str) -> bool:
     """
     Sends a professional OTP email.
-    Includes both plain-text and HTML parts to avoid spam filters.
-    Tries SSL (port 465) first, then falls back to STARTTLS (port 587).
+    If RESEND_API_KEY is present, uses Resend HTTP API (works on Render free tier).
+    Otherwise, falls back to SMTP (blocked on Render free tier).
     """
-    if not SMTP_PASSWORD or SMTP_PASSWORD.strip() == "":
-        print(f"WARNING: SMTP_PASSWORD not set. OTP {otp_code} for {to_email} NOT sent.")
+    resend_api_key = os.getenv("RESEND_API_KEY")
+
+    if not resend_api_key and (not SMTP_PASSWORD or SMTP_PASSWORD.strip() == ""):
+        print(f"WARNING: Neither RESEND_API_KEY nor SMTP_PASSWORD is set. OTP NOT sent.")
         return False
 
-    # ── Build the email message ──
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"{otp_code} is your VistaarWater verification code"
-    msg["From"] = f"VistaarWater <{SENDER_EMAIL}>"
-    msg["To"] = to_email
-    msg["Reply-To"] = SENDER_EMAIL
-    msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(domain="vistaarwater.com")
-    # Anti-spam headers
-    msg["X-Mailer"] = "VistaarWater Mailer"
-    msg["MIME-Version"] = "1.0"
-
-    # ── Plain text version (very important — spam filters prefer emails with both) ──
+    # ── Plain text version ──
     plain_text = f"""
 VistaarWater — Verification Code
 
@@ -55,16 +48,12 @@ If you did not request this code, please ignore this email.
     <tr>
       <td align="center">
         <table width="500" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-
-          <!-- Header -->
           <tr>
             <td style="background:linear-gradient(135deg,#00b894,#00cec9);padding:32px 40px;text-align:center;">
               <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:1px;">VistaarWater</h1>
               <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Custom Branded Water Bottle Platform</p>
             </td>
           </tr>
-
-          <!-- Body -->
           <tr>
             <td style="padding:40px 40px 30px;">
               <p style="margin:0 0 12px;font-size:16px;color:#333;">Hello,</p>
@@ -72,8 +61,6 @@ If you did not request this code, please ignore this email.
                 We received a request to verify your email address for your VistaarWater account.
                 Use the code below to complete the process:
               </p>
-
-              <!-- OTP Box -->
               <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding:24px 0;">
@@ -83,30 +70,11 @@ If you did not request this code, please ignore this email.
                   </td>
                 </tr>
               </table>
-
               <p style="margin:20px 0 0;font-size:14px;color:#888;text-align:center;">
                 ⏱ This code expires in <strong>10 minutes</strong>
               </p>
-
-              <hr style="border:none;border-top:1px solid #eee;margin:32px 0;">
-
-              <p style="margin:0;font-size:13px;color:#aaa;text-align:center;">
-                If you didn't request this code, you can safely ignore this email.<br>
-                Someone may have typed your email address by mistake.
-              </p>
             </td>
           </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
-              <p style="margin:0;font-size:12px;color:#bbb;">
-                &copy; 2024 VistaarWater &nbsp;|&nbsp; B2B Custom Water Bottle Design Platform<br>
-                This is an automated message — please do not reply directly to this email.
-              </p>
-            </td>
-          </tr>
-
         </table>
       </td>
     </tr>
@@ -114,7 +82,44 @@ If you did not request this code, please ignore this email.
 </body>
 </html>"""
 
-    # Attach both parts — plain text FIRST (spam filter requirement)
+    # ── Strategy 1: Resend HTTP API (Bypasses Render SMTP Block) ──
+    if resend_api_key:
+        try:
+            payload = {
+                "from": f"VistaarWater <{SENDER_EMAIL}>",
+                "to": [to_email],
+                "subject": f"{otp_code} is your VistaarWater verification code",
+                "html": html_content,
+                "text": plain_text
+            }
+            req = urllib.request.Request(
+                "https://api.resend.com/emails",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Authorization": f"Bearer {resend_api_key}",
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as response:
+                if response.status in (200, 201):
+                    print(f"[Email] OTP sent via Resend HTTP API to {to_email}")
+                    return True
+        except Exception as e:
+            print(f"[Email] Resend API failed: {e}. Falling back to SMTP...")
+
+
+    # ── Strategy 2: Traditional SMTP (Fallback, likely blocked on Free Tier) ──
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"{otp_code} is your VistaarWater verification code"
+    msg["From"] = f"VistaarWater <{SENDER_EMAIL}>"
+    msg["To"] = to_email
+    msg["Reply-To"] = SENDER_EMAIL
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain="vistaarwater.com")
+    msg["X-Mailer"] = "VistaarWater Mailer"
+    msg["MIME-Version"] = "1.0"
+
     msg.attach(MIMEText(plain_text, "plain", "utf-8"))
     msg.attach(MIMEText(html_content, "html", "utf-8"))
 
