@@ -19,18 +19,6 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def _generate_and_send_otp(email: str, db: Session) -> str:
     """Generate a 6-digit OTP, store it in DB, and send email synchronously."""
     
-    # ── Developer Bypass for Testing on Render Free Tier ──
-    dev_emails = ["ansh.ansh.talreja@gmail.com", "talrejaansh24@gmail.com", "admin@vistaarwater.com"]
-    if email in dev_emails:
-        otp_code = "123456"
-        expires_at = datetime.utcnow() + timedelta(minutes=10)
-        db.query(OTP).filter(OTP.email == email, OTP.is_used == False).update({"is_used": True})
-        new_otp = OTP(email=email, otp_code=otp_code, expires_at=expires_at)
-        db.add(new_otp)
-        db.commit()
-        print(f"[OTP Bypass] Developer email detected. Fixed OTP 123456 generated for {email}.")
-        return otp_code
-
     # ── Normal OTP Generation for Real Users ──
     otp_code = str(random.randint(100000, 999999))
     expires_at = datetime.utcnow() + timedelta(minutes=10)
