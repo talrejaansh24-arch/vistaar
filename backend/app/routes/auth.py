@@ -16,16 +16,8 @@ from app.config import GOOGLE_CLIENT_ID
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
-def _send_otp_background(email: str, otp_code: str):
-    """Send OTP email in a background thread so API doesn't block."""
-    try:
-        send_otp_email(email, otp_code)
-    except Exception as e:
-        print(f"[OTP Email] Background send failed for {email}: {e}")
-
-
 def _generate_and_send_otp(email: str, db: Session) -> str:
-    """Generate a 6-digit OTP, store it in DB, and send email in background."""
+    """Generate a 6-digit OTP, store it in DB, and send email synchronously."""
     otp_code = str(random.randint(100000, 999999))
     expires_at = datetime.utcnow() + timedelta(minutes=10)
 
@@ -36,10 +28,16 @@ def _generate_and_send_otp(email: str, db: Session) -> str:
     db.add(new_otp)
     db.commit()
 
-    # Send email in background thread — API returns immediately
-    thread = threading.Thread(target=_send_otp_background, args=(email, otp_code), daemon=True)
-    thread.start()
-    print(f"[OTP] Generated OTP {otp_code} for {email} (email sending in background)")
+    # Send email synchronously so we can catch errors (like Render blocking SMTP)
+    success = send_otp_email(email, otp_code)
+    if not success:
+        print(f"[OTP Error] Failed to send OTP to {email}")
+        raise HTTPException(
+            status_code=500, 
+            detail="Failed to send OTP email. Note: If you are using Render's Free tier, outgoing SMTP (ports 465/587) is blocked by default."
+        )
+
+    print(f"[OTP] Generated and sent OTP {otp_code} for {email}")
     return otp_code
 
 

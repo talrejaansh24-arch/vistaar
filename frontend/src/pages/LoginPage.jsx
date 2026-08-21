@@ -193,7 +193,7 @@ export default function LoginPage() {
             navigate(res.data.user?.role === 'admin' ? '/admin' : '/dashboard');
           }
         } catch (err) {
-          setError(err.response?.data?.detail || 'Google login failed');
+          setError(err.response?.data?.detail || 'Google login failed. Note: If you changed domains, add the new domain to Google Cloud Console (Authorized origins).');
         } finally {
           setLoading(false);
         }
