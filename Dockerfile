@@ -16,6 +16,10 @@ RUN npm ci
 # Copy the rest of the frontend source code
 COPY frontend/ ./
 
+# Accept Google Client ID as a build argument from Render
+ARG VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
 # Build the production React app → outputs to /build/frontend/dist
 RUN npm run build
 
