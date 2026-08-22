@@ -8,18 +8,20 @@ from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SENDER_EMAIL
 
+from typing import Tuple
 
-def send_otp_email(to_email: str, otp_code: str) -> bool:
+def send_otp_email(to_email: str, otp_code: str) -> Tuple[bool, str]:
     """
     Sends a professional OTP email.
     If RESEND_API_KEY is present, uses Resend HTTP API (works on Render free tier).
     Otherwise, falls back to SMTP (blocked on Render free tier).
+    Returns (success_boolean, error_message_string).
     """
     resend_api_key = os.getenv("RESEND_API_KEY")
 
     if not resend_api_key and (not SMTP_PASSWORD or SMTP_PASSWORD.strip() == ""):
         print(f"WARNING: Neither RESEND_API_KEY nor SMTP_PASSWORD is set. OTP NOT sent.")
-        return False
+        return False, "Server email configuration is missing (no API key or SMTP password)."
 
     # ── Plain text version ──
     plain_text = f"""
@@ -83,6 +85,7 @@ If you did not request this code, please ignore this email.
 </html>"""
 
     # ── Strategy 1: Resend HTTP API (Bypasses Render SMTP Block) ──
+    resend_err = ""
     if resend_api_key:
         try:
             payload = {
@@ -104,12 +107,14 @@ If you did not request this code, please ignore this email.
             with urllib.request.urlopen(req, timeout=15) as response:
                 if response.status in (200, 201):
                     print(f"[Email] OTP sent via Resend HTTP API to {to_email}")
-                    return True
+                    return True, ""
         except urllib.error.HTTPError as http_err:
             error_body = http_err.read().decode('utf-8', errors='ignore')
-            print(f"[Email] Resend API failed with HTTP {http_err.code}: {error_body}. Falling back to SMTP...")
+            resend_err = f"Resend API HTTP {http_err.code}: {error_body}"
+            print(f"[Email] {resend_err}. Falling back to SMTP...")
         except Exception as e:
-            print(f"[Email] Resend API failed: {e}. Falling back to SMTP...")
+            resend_err = f"Resend API error: {e}"
+            print(f"[Email] {resend_err}. Falling back to SMTP...")
 
 
     # ── Strategy 2: Traditional SMTP (Fallback, likely blocked on Free Tier) ──
@@ -126,6 +131,7 @@ If you did not request this code, please ignore this email.
     msg.attach(MIMEText(plain_text, "plain", "utf-8"))
     msg.attach(MIMEText(html_content, "html", "utf-8"))
 
+    smtp_err = ""
     # -- Strategy 1: SSL on port 465 (most reliable on cloud hosts like Render) --
     try:
         context = ssl.create_default_context()
@@ -133,7 +139,7 @@ If you did not request this code, please ignore this email.
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
         print(f"[Email] OTP sent via SSL/465 to {to_email}")
-        return True
+        return True, ""
     except ssl.SSLCertVerificationError:
         # Local dev on Windows may have missing root certs — try without verification
         try:
@@ -142,10 +148,12 @@ If you did not request this code, please ignore this email.
                 server.login(SMTP_USER, SMTP_PASSWORD)
                 server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
             print(f"[Email] OTP sent via SSL/465 (unverified) to {to_email}")
-            return True
+            return True, ""
         except Exception as e2:
+            smtp_err = str(e2)
             print(f"[Email] SSL/465 (unverified) also failed: {e2}. Trying STARTTLS/587...")
     except Exception as ssl_err:
+        smtp_err = str(ssl_err)
         print(f"[Email] SSL/465 failed: {ssl_err}. Trying STARTTLS/587...")
 
     # -- Strategy 2: STARTTLS on port 587 (fallback) --
@@ -157,7 +165,15 @@ If you did not request this code, please ignore this email.
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
         print(f"[Email] OTP sent via STARTTLS/587 to {to_email}")
-        return True
+        return True, ""
     except Exception as tls_err:
+        smtp_err = str(tls_err)
         print(f"[Email] Both methods failed. STARTTLS error: {tls_err}")
-        return False
+        
+        # Construct final error message
+        final_err = "Email sending failed."
+        if resend_err:
+            final_err += f" {resend_err}."
+        if "Network is unreachable" in smtp_err or "101" in smtp_err:
+            final_err += " SMTP is blocked by Render Free Tier firewall."
+        return False, final_err

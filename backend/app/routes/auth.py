@@ -31,12 +31,12 @@ def _generate_and_send_otp(email: str, db: Session) -> str:
     db.commit()
 
     # Send email synchronously so we can catch errors (like Render blocking SMTP)
-    success = send_otp_email(email, otp_code)
+    success, err_msg = send_otp_email(email, otp_code)
     if not success:
-        print(f"[OTP Error] Failed to send OTP to {email}")
+        print(f"[OTP Error] Failed to send OTP to {email}. Reason: {err_msg}")
         raise HTTPException(
             status_code=500, 
-            detail="Failed to send OTP email. Note: If you are using Render's Free tier, outgoing SMTP (ports 465/587) is blocked by default."
+            detail=err_msg
         )
 
     print(f"[OTP] Generated and sent OTP {otp_code} for {email}")
