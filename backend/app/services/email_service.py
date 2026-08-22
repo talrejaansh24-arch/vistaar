@@ -105,6 +105,9 @@ If you did not request this code, please ignore this email.
                 if response.status in (200, 201):
                     print(f"[Email] OTP sent via Resend HTTP API to {to_email}")
                     return True
+        except urllib.error.HTTPError as http_err:
+            error_body = http_err.read().decode('utf-8', errors='ignore')
+            print(f"[Email] Resend API failed with HTTP {http_err.code}: {error_body}. Falling back to SMTP...")
         except Exception as e:
             print(f"[Email] Resend API failed: {e}. Falling back to SMTP...")
 
