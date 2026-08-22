@@ -136,7 +136,41 @@
 }
 .auth-links {
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  align-items: center;
+}
+
+.nav-login-btn {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+.nav-login-btn:hover {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-signup-btn {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 8px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0, 184, 148, 0.3);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.nav-signup-btn:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 184, 148, 0.5);
+  color: #ffffff;
 }
 
 .menu-toggle {
@@ -235,5 +269,5 @@
     padding-top: 20px;
     border-top: 1px solid var(--border);
   }
-  .auth-links .btn { width: 100%; text-align: center; justify-content: center; padding: 14px; }
+  .auth-links a { width: 100%; text-align: center; justify-content: center; padding: 14px; }
 }

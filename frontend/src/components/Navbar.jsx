@@ -65,8 +65,8 @@ export default function Navbar() {
             </>
           ) : (
             <div className="auth-links">
-              <Link to="/login" className="btn btn-ghost btn-sm" onClick={() => setMenuOpen(false)}>Login</Link>
-              <Link to="/register" className="btn btn-primary btn-sm" onClick={() => setMenuOpen(false)}>Sign Up</Link>
+              <Link to="/login" className="nav-login-btn" onClick={() => setMenuOpen(false)}>Login</Link>
+              <Link to="/register" className="nav-signup-btn" onClick={() => setMenuOpen(false)}>Sign Up</Link>
             </div>
           )}
         </div>
