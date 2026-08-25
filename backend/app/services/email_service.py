@@ -87,9 +87,14 @@ If you did not request this code, please ignore this email.
     # ── Strategy 1: Resend HTTP API (Bypasses Render SMTP Block) ──
     resend_err = ""
     if resend_api_key:
+        # Resend rejects @gmail.com senders. Use their testing address as fallback.
+        resend_from = SENDER_EMAIL
+        if "@gmail.com" in SENDER_EMAIL.lower():
+            resend_from = "onboarding@resend.dev"
+            print(f"[Email] SENDER_EMAIL is Gmail, using Resend testing sender: {resend_from}")
         try:
             payload = {
-                "from": f"VistaarWater <{SENDER_EMAIL}>",
+                "from": f"VistaarWater <{resend_from}>",
                 "to": [to_email],
                 "subject": f"{otp_code} is your VistaarWater verification code",
                 "html": html_content,

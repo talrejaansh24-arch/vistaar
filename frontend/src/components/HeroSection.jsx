@@ -117,12 +117,7 @@ export default function HeroSection() {
     e.preventDefault();
     if (!form.business_name.trim()) return;
 
-    // If user is not logged in, save form data and redirect to login
-    if (!user || !token) {
-      localStorage.setItem('vistaarwater_pending_design', JSON.stringify(form));
-      navigate('/login');
-      return;
-    }
+    // Anyone can generate designs — no login required
 
     setLoading(true);
     try {
