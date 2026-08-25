@@ -190,7 +190,7 @@ export default function LoginPage() {
           setAuth(res.data.user, res.data.access_token);
           const handled = await handlePendingDesign();
           if (!handled) {
-            navigate(res.data.user?.role === 'admin' ? '/admin' : '/dashboard');
+            navigate(res.data.user?.role === 'admin' ? '/admin' : '/');
           }
         } catch (err) {
           setError(err.response?.data?.detail || 'Google login failed. Note: If you changed domains, add the new domain to Google Cloud Console (Authorized origins).');
@@ -235,7 +235,7 @@ export default function LoginPage() {
         // Check for pending design first
         const handled = await handlePendingDesign();
         if (!handled) {
-          navigate(res.data.user?.role === 'admin' ? '/admin' : '/dashboard');
+          navigate(res.data.user?.role === 'admin' ? '/admin' : '/');
         }
       } else {
         setError('Unexpected response from server.');
@@ -270,7 +270,7 @@ export default function LoginPage() {
       // Check for pending design first
       const handled = await handlePendingDesign();
       if (!handled) {
-        gsap.to(cardRef.current, { scale: 0.97, opacity: 0, duration: 0.35, ease: 'power2.in', onComplete: () => navigate('/dashboard') });
+        gsap.to(cardRef.current, { scale: 0.97, opacity: 0, duration: 0.35, ease: 'power2.in', onComplete: () => navigate('/') });
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid OTP');

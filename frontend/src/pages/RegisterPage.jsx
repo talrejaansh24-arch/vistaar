@@ -122,7 +122,7 @@ export default function RegisterPage() {
         animateToOtp();
       } else if (res.data.access_token) {
         setAuth(res.data.user, res.data.access_token);
-        navigate('/dashboard');
+        navigate('/');
       } else {
         setError('Unexpected response from server.');
       }
@@ -153,7 +153,7 @@ export default function RegisterPage() {
     try {
       const res = await authAPI.verifyOtp({ email: otpEmail, otp_code: code });
       setAuth(res.data.user, res.data.access_token);
-      gsap.to(cardRef.current, { scale: 0.97, opacity: 0, duration: 0.35, ease: 'power2.in', onComplete: () => navigate('/dashboard') });
+      gsap.to(cardRef.current, { scale: 0.97, opacity: 0, duration: 0.35, ease: 'power2.in', onComplete: () => navigate('/') });
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid OTP');
       gsap.fromTo('.otp-inputs', { x: -5 }, { x: 5, duration: 0.07, repeat: 5, yoyo: true, ease: 'power1.inOut' });

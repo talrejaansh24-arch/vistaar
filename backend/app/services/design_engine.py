@@ -608,32 +608,39 @@ def generate_designs(
     label_size = LABEL_SIZES.get(bottle_size, LABEL_SIZES["500ml"])
     width, height = label_size
 
-    # The custom designs we generate
+    # The custom designs we generate with style group tags
     styles_meta = [
-        {"name": "Brandex Geometric", "style": "Brandex", "colors": ["#00a8ff", "#ffffff", "#00a8ff"], "draw": draw_brandex_style},
-        {"name": "Forever Wave", "style": "Forever", "colors": ["#0096f2", "#ffffff", "#2d3436"], "draw": draw_forever_style},
-        {"name": "WaveUp Dynamic", "style": "WaveUp", "colors": ["#ebf0f5", "#0b1e50", "#00a8ff"], "draw": draw_waveup_style},
-        {"name": "Fiji Stripes", "style": "Fiji", "colors": ["#ffffff", "#e60028", "#009650"], "draw": draw_fiji_style},
-        {"name": "Myst Droplets", "style": "Myst", "colors": ["#ffffff", "#009650", "#0a1d50"], "draw": draw_myst_style},
-        {"name": "Pure Artesian", "style": "Pure", "colors": ["#1a1a1a", "#ffffff", "#888888"], "draw": draw_pure_style},
-        {"name": "Reva Bubble", "style": "Reva", "colors": ["#1e2022", "#a3e635", "#ffffff"], "draw": draw_reva_style},
-        {"name": "OpenLate Night", "style": "OpenLate", "colors": ["#000000", "#ffffff", "#ffffff"], "draw": draw_openlate_style},
-        {"name": "OneBurger Clean", "style": "OneBurger", "colors": ["#ffffff", "#000000", "#000000"], "draw": draw_oneburger_style},
-        {"name": "Mountain Alpine", "style": "Mountain", "colors": ["#dff9fb", "#130cb7", "#52c234"], "draw": draw_mountain_style},
-        {"name": "Vivia Cursive", "style": "Vivia", "colors": ["#e60028", "#ffffff", "#009688"], "draw": draw_vivia_style},
-        {"name": "Melt Water", "style": "Melt", "colors": ["#191c1e", "#ffffff", "#e60028"], "draw": draw_melt_style},
-        {"name": "LifeWtr Mountain", "style": "LifeWtrArt1", "colors": ["#ffffff", "#000000", "#ff6b6b"], "draw": draw_lifewtrart1_style},
-        {"name": "LifeWtr Doodle", "style": "LifeWtrArt2", "colors": ["#f5f6fa", "#000000", "#ff6b6b"], "draw": draw_lifewtrart2_style},
-        {"name": "LifeWtr Diamond", "style": "LifeWtrArt3", "colors": ["#ffffff", "#000000", "#ff007f"], "draw": draw_lifewtrart3_style},
+        {"name": "Brandex Geometric", "style": "Brandex", "colors": ["#00a8ff", "#ffffff", "#00a8ff"], "draw": draw_brandex_style, "style_groups": ["modern"]},
+        {"name": "Forever Wave", "style": "Forever", "colors": ["#0096f2", "#ffffff", "#2d3436"], "draw": draw_forever_style, "style_groups": ["modern", "classic"]},
+        {"name": "WaveUp Dynamic", "style": "WaveUp", "colors": ["#ebf0f5", "#0b1e50", "#00a8ff"], "draw": draw_waveup_style, "style_groups": ["modern", "eco"]},
+        {"name": "Fiji Stripes", "style": "Fiji", "colors": ["#ffffff", "#e60028", "#009650"], "draw": draw_fiji_style, "style_groups": ["classic", "modern"]},
+        {"name": "Myst Droplets", "style": "Myst", "colors": ["#ffffff", "#009650", "#0a1d50"], "draw": draw_myst_style, "style_groups": ["minimal", "eco"]},
+        {"name": "Pure Artesian", "style": "Pure", "colors": ["#1a1a1a", "#ffffff", "#888888"], "draw": draw_pure_style, "style_groups": ["luxury", "minimal"]},
+        {"name": "Reva Bubble", "style": "Reva", "colors": ["#1e2022", "#a3e635", "#ffffff"], "draw": draw_reva_style, "style_groups": ["minimal", "luxury"]},
+        {"name": "OpenLate Night", "style": "OpenLate", "colors": ["#000000", "#ffffff", "#ffffff"], "draw": draw_openlate_style, "style_groups": ["luxury"]},
+        {"name": "OneBurger Clean", "style": "OneBurger", "colors": ["#ffffff", "#000000", "#000000"], "draw": draw_oneburger_style, "style_groups": ["minimal", "classic"]},
+        {"name": "Mountain Alpine", "style": "Mountain", "colors": ["#dff9fb", "#130cb7", "#52c234"], "draw": draw_mountain_style, "style_groups": ["eco", "classic"]},
+        {"name": "Vivia Cursive", "style": "Vivia", "colors": ["#e60028", "#ffffff", "#009688"], "draw": draw_vivia_style, "style_groups": ["luxury", "modern"]},
+        {"name": "Melt Water", "style": "Melt", "colors": ["#191c1e", "#ffffff", "#e60028"], "draw": draw_melt_style, "style_groups": ["luxury"]},
+        {"name": "LifeWtr Mountain", "style": "LifeWtrArt1", "colors": ["#ffffff", "#000000", "#ff6b6b"], "draw": draw_lifewtrart1_style, "style_groups": ["modern", "luxury"]},
+        {"name": "LifeWtr Doodle", "style": "LifeWtrArt2", "colors": ["#f5f6fa", "#000000", "#ff6b6b"], "draw": draw_lifewtrart2_style, "style_groups": ["classic"]},
+        {"name": "LifeWtr Diamond", "style": "LifeWtrArt3", "colors": ["#ffffff", "#000000", "#ff007f"], "draw": draw_lifewtrart3_style, "style_groups": ["classic"]},
     ]
 
     designs = []
     
-    # Filter meta if force_template is provided
+    # Filter/reorder based on selected style and force_template
     if force_template:
         matching = [m for m in styles_meta if m["style"].lower() == force_template.lower()]
         if matching:
             styles_meta = matching
+    elif style:
+        style_clean = style.lower().strip()
+        matching = [m for m in styles_meta if style_clean in m.get("style_groups", [])]
+        if matching:
+            non_matching = [m for m in styles_meta if m not in matching]
+            # Prioritize matching styles, then append the rest as secondary choices
+            styles_meta = matching + non_matching
             
     num_to_generate = min(max(count, len(styles_meta)), 15)
     if force_template and matching:
