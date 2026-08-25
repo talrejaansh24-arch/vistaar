@@ -167,55 +167,47 @@ export default function LoginPage() {
     }
   };
 
-  // ── Google Sign-In ──
-  const handleGoogleLogin = () => {
+  // ── Google Sign-In Auto-initialization ──
+  useEffect(() => {
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      setError('Google Sign-In is not configured yet.');
-      return;
-    }
+    if (!clientId) return;
 
-    if (!window.google?.accounts?.id) {
-      setError('Google Sign-In is still loading. Please try again.');
-      return;
-    }
-
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: async (response) => {
-        setError('');
-        setLoading(true);
-        try {
-          const res = await authAPI.googleLogin({ credential: response.credential });
-          setAuth(res.data.user, res.data.access_token);
-          const handled = await handlePendingDesign();
-          if (!handled) {
-            navigate(res.data.user?.role === 'admin' ? '/admin' : '/');
-          }
-        } catch (err) {
-          setError(err.response?.data?.detail || 'Google login failed. Note: If you changed domains, add the new domain to Google Cloud Console (Authorized origins).');
-        } finally {
-          setLoading(false);
-        }
-      },
-    });
-
-    window.google.accounts.id.prompt((notification) => {
-      // If One Tap is dismissed or skipped, fallback to popup
-      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-        window.google.accounts.id.renderButton(
-          document.createElement('div'),
-          { theme: 'filled_black', size: 'large' }
-        );
-        // Use the popup method instead
-        window.google.accounts.oauth2.initCodeClient({
+    const initGoogle = () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
           client_id: clientId,
-          scope: 'email profile',
-          callback: () => {},
+          callback: async (response) => {
+            setError('');
+            setLoading(true);
+            try {
+              const res = await authAPI.googleLogin({ credential: response.credential });
+              setAuth(res.data.user, res.data.access_token);
+              const handled = await handlePendingDesign();
+              if (!handled) {
+                navigate(res.data.user?.role === 'admin' ? '/admin' : '/');
+              }
+            } catch (err) {
+              setError(err.response?.data?.detail || 'Google login failed.');
+            } finally {
+              setLoading(false);
+            }
+          }
         });
+
+        const btnContainer = document.getElementById('google-signin-btn');
+        if (btnContainer) {
+          window.google.accounts.id.renderButton(
+            btnContainer,
+            { theme: 'filled_black', size: 'large', width: btnContainer.parentElement?.offsetWidth || 340, text: 'continue_with' }
+          );
+        }
+      } else {
+        setTimeout(initGoogle, 100);
       }
-    });
-  };
+    };
+
+    initGoogle();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -406,9 +398,9 @@ export default function LoginPage() {
               {loading ? <><span className="auth-btn-spinner" /> Signing in...</> : 'Sign In'}
             </button>
             <div className="auth-divider"><span>or continue with</span></div>
-            <button type="button" className="auth-google-btn" onClick={handleGoogleLogin} disabled={loading}>
-              <GoogleIcon /> Continue with Google
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: '12px' }}>
+              <div id="google-signin-btn"></div>
+            </div>
           </form>
 
           {/* ─── Step 2: OTP ─── */}
