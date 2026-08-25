@@ -27,9 +27,9 @@ export default function Footer() {
           </div>
           <div className="footer-links">
             <h4>Contact</h4>
-            <span>📧 hello@vistaar.com</span>
-            <span>📞 +91 98765 43210</span>
-            <span>📍 Mumbai, India</span>
+            <span>📧 vistaarwater@gmail.com</span>
+            <span>📞 +91 7000689145</span>
+            <span>📍 Indore, India</span>
           </div>
         </div>
         <div className="footer-bottom">
