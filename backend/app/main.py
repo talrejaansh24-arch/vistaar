@@ -160,12 +160,28 @@ async def startup_event():
         from sqlalchemy import text
         from app.database import engine
         with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE"))
-            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 1"))
-            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_logged_in BOOLEAN DEFAULT FALSE"))
-            conn.commit()
+            # 1. Alter is_suspended
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_suspended BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+            except Exception:
+                pass  # Already exists or unsupported
+                
+            # 2. Alter session_version
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN session_version INTEGER DEFAULT 1"))
+                conn.commit()
+            except Exception:
+                pass  # Already exists or unsupported
+                
+            # 3. Alter is_logged_in
+            try:
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_logged_in BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+            except Exception:
+                pass  # Already exists or unsupported
     except Exception as migration_err:
-        print(f"[Migration Warning] Column alteration failed (already matches or unsupported): {migration_err}")
+        print(f"[Migration Warning] Database column verification failed: {migration_err}")
 
         # Auto-seed default data
     try:
