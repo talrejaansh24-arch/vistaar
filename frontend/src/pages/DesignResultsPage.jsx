@@ -1,28 +1,89 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import DesignGrid from '../components/DesignGrid';
 import { pageTransition } from '../utils/animations';
+import { resolveAssetUrl } from '../api/client';
+import { Check, ShoppingBag, ArrowRight } from 'lucide-react';
+import './DesignResultsPage.css';
 
 export default function DesignResultsPage() {
-  const { generatedDesigns, designInput } = useStore();
+  const { generatedDesigns, designInput, addToCart } = useStore();
   const navigate = useNavigate();
   const pageRef = useRef(null);
+
+  // Quick Order States
+  const [selectedDesignId, setSelectedDesignId] = useState('');
+  const [selectedSize, setSelectedSize] = useState('500ml');
+  const [qty, setQty] = useState(500);
+  const [addedToast, setAddedToast] = useState(false);
 
   useEffect(() => {
     if (!generatedDesigns.length) { navigate('/'); return; }
     if (pageRef.current) pageTransition(pageRef.current);
-  }, []);
+    if (generatedDesigns.length > 0) {
+      setSelectedDesignId(generatedDesigns[0].id);
+    }
+  }, [generatedDesigns]);
+
+  if (!generatedDesigns.length) return null;
+
+  const selectedDesignObj = generatedDesigns.find(d => d.id === selectedDesignId) || generatedDesigns[0];
+
+  const sizePrices = {
+    '250ml': 15,
+    '500ml': 20,
+    '1000ml': 30
+  };
+
+  const basePrice = sizePrices[selectedSize] || 20;
+
+  // Bulk Discount calculation
+  const getPricing = (quantity, base) => {
+    let discount = 0;
+    if (quantity >= 2000) discount = 0.15;
+    else if (quantity >= 1000) discount = 0.10;
+    else if (quantity >= 500) discount = 0.05;
+    
+    const unit = base * (1 - discount);
+    const total = unit * quantity;
+    return { unit, total, discount: discount * 100 };
+  };
+
+  const pricing = getPricing(qty, basePrice);
+
+  const handleQuickAdd = () => {
+    if (!selectedDesignObj) return;
+    
+    const productIdMap = {
+      '250ml': 1,
+      '500ml': 2,
+      '1000ml': 3
+    };
+    
+    addToCart({
+      design: selectedDesignObj,
+      productId: productIdMap[selectedSize] || 2,
+      quantity: qty,
+      size: selectedSize,
+      unitPrice: pricing.unit,
+    });
+    
+    setAddedToast(true);
+    setTimeout(() => setAddedToast(false), 3000);
+  };
 
   return (
     <div className="page-transition-wrapper" ref={pageRef} style={{ paddingTop: '100px', minHeight: '80vh' }}>
       <div className="container">
+        
+        {/* Upper Badge & Summary Header */}
         {designInput && (
           <div style={{ textAlign: 'center', marginBottom: '8px' }}>
             <h2 style={{ fontSize: '1.8rem', marginBottom: '8px' }}>
               Your <span className="gradient-text">Designs</span> Are Ready
             </h2>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
               <span className="badge badge-info">{designInput.business_name}</span>
               <span className="badge badge-success">{designInput.category}</span>
               <span className="badge badge-warning">{designInput.bottle_size}</span>
@@ -30,12 +91,150 @@ export default function DesignResultsPage() {
             </div>
           </div>
         )}
+
+        {/* Template Grid */}
         <DesignGrid designs={generatedDesigns} />
-        <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '40px' }}>
-          <button className="btn btn-ghost" onClick={() => navigate('/')}>{'<'} Generate New Designs</button>
+
+        {/* NEW: Dedicated Quick Order / Add to Cart Section */}
+        <section className="quick-order-section">
+          <div className="section-divider" style={{ margin: '40px 0' }} />
+          
+          <div className="quick-order-card glass">
+            
+            {/* Left Col: Visual Preview */}
+            <div className="quick-order-preview-panel">
+              <div className="quick-preview-image-wrap">
+                {selectedDesignObj?.preview_url ? (
+                  <img src={resolveAssetUrl(selectedDesignObj.preview_url)} alt={selectedDesignObj.name} />
+                ) : (
+                  <div style={{ color: 'var(--text-muted)' }}>No preview available</div>
+                )}
+              </div>
+              <div className="quick-preview-meta">
+                <h4>{selectedDesignObj?.name || 'Selected Design'}</h4>
+                <p>Format: Vector Digital Mockup</p>
+              </div>
+            </div>
+
+            {/* Right Col: Controls */}
+            <div className="quick-order-controls">
+              <div>
+                <h3>⚡ Fast Add to Cart</h3>
+                <p className="section-desc">Select your design, size, and quantity to add to cart instantly without opening the editor.</p>
+              </div>
+
+              {/* Design Selector */}
+              <div className="control-group">
+                <label>1. Choose Design Template</label>
+                <select 
+                  className="quick-select" 
+                  value={selectedDesignId} 
+                  onChange={(e) => setSelectedDesignId(e.target.value)}
+                >
+                  {generatedDesigns.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Size Selector */}
+              <div className="control-group">
+                <label>2. Choose Bottle Size</label>
+                <div className="size-selector-grid">
+                  {[
+                    { id: '250ml', title: '250ml', price: 'Rs 15' },
+                    { id: '500ml', title: '500ml', price: 'Rs 20' },
+                    { id: '1000ml', title: '1000ml', price: 'Rs 30' }
+                  ].map((s) => (
+                    <label key={s.id} className="size-radio-card">
+                      <input 
+                        type="radio" 
+                        name="quick-size" 
+                        value={s.id} 
+                        checked={selectedSize === s.id}
+                        onChange={() => setSelectedSize(s.id)}
+                      />
+                      <div className="size-card-content">
+                        <span className="size-title">{s.title}</span>
+                        <span className="size-price">{s.price}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quantity Slider */}
+              <div className="control-group">
+                <label>3. Order Quantity ({qty.toLocaleString()} bottles)</label>
+                <div className="quantity-input-box">
+                  <input 
+                    type="number" 
+                    className="quantity-num-input" 
+                    value={qty}
+                    min={100}
+                    step={50}
+                    onChange={(e) => setQty(Math.max(100, parseInt(e.target.value) || 100))}
+                  />
+                  <input 
+                    type="range" 
+                    className="quantity-slider" 
+                    min={100} 
+                    max={5000} 
+                    step={100} 
+                    value={qty}
+                    onChange={(e) => setQty(parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+
+              {/* Real-time Pricing Summary */}
+              <div className="pricing-breakdown-panel">
+                <div className="price-item">
+                  <span>Unit Price</span>
+                  <p>₹{pricing.unit.toFixed(2)}</p>
+                  {pricing.discount > 0 && (
+                    <span className="discount-tag">-{pricing.discount}% Bulk Off</span>
+                  )}
+                </div>
+                <div className="price-item" style={{ textAlign: 'right' }}>
+                  <span>Estimated Total</span>
+                  <p className="highlight-total">₹{Math.round(pricing.total).toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Add to Cart CTA */}
+              <button 
+                className="btn btn-primary btn-lg" 
+                onClick={handleQuickAdd}
+                style={{ width: '100%', justifyContent: 'center', gap: '10px' }}
+              >
+                <ShoppingBag size={18} /> Add Selected to Cart
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Footer Navigation */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '30px', paddingBottom: '40px' }}>
+          <button className="btn btn-ghost" onClick={() => navigate('/')}>
+            {'<'} Generate New Designs
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate('/cart')} style={{ gap: '6px' }}>
+            Go to Cart <ArrowRight size={16} />
+          </button>
         </div>
+
       </div>
+
+      {/* Floating Success Toast Alert */}
+      {addedToast && (
+        <div className="toast-success-alert">
+          <Check size={18} />
+          <span>Added to Cart Successfully!</span>
+        </div>
+      )}
+
     </div>
   );
 }
-
