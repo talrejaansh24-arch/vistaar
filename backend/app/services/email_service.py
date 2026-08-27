@@ -7,82 +7,18 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SENDER_EMAIL
-
 from typing import Tuple
 
-def send_otp_email(to_email: str, otp_code: str) -> Tuple[bool, str]:
+def send_email_base(to_email: str, subject: str, plain_text: str, html_content: str) -> Tuple[bool, str]:
     """
-    Sends a professional OTP email.
-    If RESEND_API_KEY is present, uses Resend HTTP API (works on Render free tier).
-    Otherwise, falls back to SMTP (blocked on Render free tier).
-    Returns (success_boolean, error_message_string).
+    Sends an email using either Resend API or SMTP as fallback.
+    Common core function for all email dispatches.
     """
     resend_api_key = os.getenv("RESEND_API_KEY")
 
     if not resend_api_key and (not SMTP_PASSWORD or SMTP_PASSWORD.strip() == ""):
-        print(f"WARNING: Neither RESEND_API_KEY nor SMTP_PASSWORD is set. OTP NOT sent.")
+        print(f"WARNING: Neither RESEND_API_KEY nor SMTP_PASSWORD is set. Email NOT sent.")
         return False, "Server email configuration is missing (no API key or SMTP password)."
-
-    # ── Plain text version ──
-    plain_text = f"""
-VistaarWater — Verification Code
-
-Your one-time verification code is: {otp_code}
-
-This code is valid for 10 minutes.
-Do not share this code with anyone.
-
-If you did not request this code, please ignore this email.
-
-— VistaarWater Team
-    """.strip()
-
-    # ── HTML version ──
-    html_content = f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VistaarWater Verification Code</title>
-</head>
-<body style="margin:0;padding:0;background-color:#f4f7fa;font-family:Arial,Helvetica,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7fa;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="500" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#00b894,#00cec9);padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:1px;">VistaarWater</h1>
-              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Custom Branded Water Bottle Platform</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px 40px 30px;">
-              <p style="margin:0 0 12px;font-size:16px;color:#333;">Hello,</p>
-              <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.6;">
-                We received a request to verify your email address for your VistaarWater account.
-                Use the code below to complete the process:
-              </p>
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td align="center" style="padding:24px 0;">
-                    <div style="display:inline-block;background:#f0fdf9;border:2px dashed #00b894;border-radius:12px;padding:20px 48px;">
-                      <span style="font-size:42px;font-weight:800;letter-spacing:10px;color:#00b894;font-family:'Courier New',monospace;">{otp_code}</span>
-                    </div>
-                  </td>
-                </tr>
-              </table>
-              <p style="margin:20px 0 0;font-size:14px;color:#888;text-align:center;">
-                ⏱ This code expires in <strong>10 minutes</strong>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>"""
 
     # ── Strategy 1: Resend HTTP API (Bypasses Render SMTP Block) ──
     resend_err = ""
@@ -96,7 +32,7 @@ If you did not request this code, please ignore this email.
             payload = {
                 "from": f"VistaarWater <{resend_from}>",
                 "to": [to_email],
-                "subject": f"{otp_code} is your VistaarWater verification code",
+                "subject": subject,
                 "html": html_content,
                 "text": plain_text
             }
@@ -112,7 +48,7 @@ If you did not request this code, please ignore this email.
             )
             with urllib.request.urlopen(req, timeout=15) as response:
                 if response.status in (200, 201):
-                    print(f"[Email] OTP sent via Resend HTTP API to {to_email}")
+                    print(f"[Email] Sent via Resend HTTP API to {to_email}")
                     return True, ""
         except urllib.error.HTTPError as http_err:
             error_body = http_err.read().decode('utf-8', errors='ignore')
@@ -122,10 +58,9 @@ If you did not request this code, please ignore this email.
             resend_err = f"Resend API error: {e}"
             print(f"[Email] {resend_err}. Falling back to SMTP...")
 
-
     # ── Strategy 2: Traditional SMTP (Fallback, likely blocked on Free Tier) ──
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"{otp_code} is your VistaarWater verification code"
+    msg["Subject"] = subject
     msg["From"] = f"VistaarWater <{SENDER_EMAIL}>"
     msg["To"] = to_email
     msg["Reply-To"] = SENDER_EMAIL
@@ -138,22 +73,21 @@ If you did not request this code, please ignore this email.
     msg.attach(MIMEText(html_content, "html", "utf-8"))
 
     smtp_err = ""
-    # -- Strategy 1: SSL on port 465 (most reliable on cloud hosts like Render) --
+    # -- SSL on port 465 (most reliable on cloud hosts like Render) --
     try:
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(SMTP_HOST, 465, context=context, timeout=15) as server:
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print(f"[Email] OTP sent via SSL/465 to {to_email}")
+        print(f"[Email] Sent via SSL/465 to {to_email}")
         return True, ""
     except ssl.SSLCertVerificationError:
-        # Local dev on Windows may have missing root certs — try without verification
         try:
             context = ssl._create_unverified_context()
             with smtplib.SMTP_SSL(SMTP_HOST, 465, context=context, timeout=15) as server:
                 server.login(SMTP_USER, SMTP_PASSWORD)
                 server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-            print(f"[Email] OTP sent via SSL/465 (unverified) to {to_email}")
+            print(f"[Email] Sent via SSL/465 (unverified) to {to_email}")
             return True, ""
         except Exception as e2:
             smtp_err = str(e2)
@@ -162,7 +96,7 @@ If you did not request this code, please ignore this email.
         smtp_err = str(ssl_err)
         print(f"[Email] SSL/465 failed: {ssl_err}. Trying STARTTLS/587...")
 
-    # -- Strategy 2: STARTTLS on port 587 (fallback) --
+    # -- STARTTLS on port 587 (fallback) --
     try:
         with smtplib.SMTP(SMTP_HOST, 587, timeout=15) as server:
             server.ehlo()
@@ -170,7 +104,7 @@ If you did not request this code, please ignore this email.
             server.ehlo()
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-        print(f"[Email] OTP sent via STARTTLS/587 to {to_email}")
+        print(f"[Email] Sent via STARTTLS/587 to {to_email}")
         return True, ""
     except Exception as tls_err:
         smtp_err = str(tls_err)
@@ -183,3 +117,165 @@ If you did not request this code, please ignore this email.
         if "Network is unreachable" in smtp_err or "101" in smtp_err:
             final_err += " SMTP is blocked by Render Free Tier firewall."
         return False, final_err
+
+
+def send_otp_email(to_email: str, otp_code: str) -> Tuple[bool, str]:
+    """Sends a verification OTP code to the user."""
+    plain_text = f"VistaarWater — Verification Code\n\nYour one-time verification code is: {otp_code}\n\nThis code is valid for 10 minutes.\nDo not share this code."
+    
+    html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VistaarWater Verification Code</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f7fa;font-family:Arial,sans-serif;">
+  <table width="100%" style="background-color:#f4f7fa;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="500" style="background:#ffffff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#00b894,#00cec9);padding:32px;text-align:center;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;">VistaarWater</h1>
+              <p style="margin:6px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Custom Branded Water Bottle Platform</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <p style="margin:0 0 12px;font-size:16px;">Hello,</p>
+              <p style="margin:0 0 28px;font-size:15px;color:#555;line-height:1.6;">
+                Use the verification code below to access your VistaarWater account:
+              </p>
+              <div style="text-align:center;background:#f0fdf9;border:2px dashed #00b894;border-radius:12px;padding:20px;margin-bottom:20px;">
+                <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#00b894;">{otp_code}</span>
+              </div>
+              <p style="font-size:13px;color:#888;text-align:center;">⏱ Valid for 10 minutes</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+    
+    return send_email_base(to_email, f"{otp_code} is your VistaarWater verification code", plain_text, html_content)
+
+
+def send_order_notification_email(order, user, items_details) -> bool:
+    """Sends dynamic order information to the admin mail list."""
+    subject = f"🚨 New Order Placed: Order #{order.id}"
+    
+    # Construct items HTML table
+    items_html = ""
+    for item in items_details:
+        preview_img = f'<img src="{item["preview_url"]}" width="120" style="border-radius:6px; border:1px solid #ddd;" />' if item["preview_url"] else '<em>No Design (Quick Order)</em>'
+        items_html += f"""
+        <tr>
+          <td style="padding:12px; border-bottom:1px solid #eee;">{item["name"]} ({item["size"]})</td>
+          <td style="padding:12px; border-bottom:1px solid #eee; text-align:center;">{preview_img}</td>
+          <td style="padding:12px; border-bottom:1px solid #eee; text-align:center;">{item["quantity"]}</td>
+          <td style="padding:12px; border-bottom:1px solid #eee; text-align:right;">₹{item["unit_price"]}</td>
+          <td style="padding:12px; border-bottom:1px solid #eee; text-align:right;">₹{item["subtotal"]}</td>
+        </tr>
+        """
+        
+    html_content = f"""<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>New Order #{order.id}</title>
+    </head>
+    <body style="font-family:Arial,sans-serif; color:#333; margin:0; padding:20px; background-color:#f8f9fa;">
+      <div style="max-width:650px; background:#fff; margin:0 auto; padding:30px; border-radius:12px; border:1px solid #e1e4e6;">
+        <h2 style="color:#00b894; margin-top:0; border-bottom:2px solid #00b894; padding-bottom:10px;">📦 Order Placed: #{order.id}</h2>
+        
+        <h3>👤 Customer Information:</h3>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Business Name:</strong> {user.business_name or '—'}</p>
+        <p><strong>Phone:</strong> {user.phone or '—'}</p>
+        
+        <h3>🚚 Shipping & Billing Details:</h3>
+        <p><strong>Shipping Address:</strong> {order.shipping_address or '—'}</p>
+        <p><strong>Billing Address:</strong> {order.billing_address or '—'}</p>
+        <p><strong>Payment Method:</strong> {order.payment_method or '—'}</p>
+        <p><strong>Order Notes:</strong> {order.notes or '—'}</p>
+        
+        <h3>🛒 Order Items:</h3>
+        <table width="100%" style="border-collapse:collapse; margin-top:15px;">
+          <thead>
+            <tr style="background:#f4f7fa;">
+              <th style="padding:12px; text-align:left; border-bottom:2px solid #ddd;">Product</th>
+              <th style="padding:12px; text-align:center; border-bottom:2px solid #ddd;">Design Mockup</th>
+              <th style="padding:12px; text-align:center; border-bottom:2px solid #ddd;">Qty</th>
+              <th style="padding:12px; text-align:right; border-bottom:2px solid #ddd;">Unit Price</th>
+              <th style="padding:12px; text-align:right; border-bottom:2px solid #ddd;">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items_html}
+            <tr style="font-weight:bold; background:#fafafa;">
+              <td colspan="4" style="padding:15px 12px; text-align:right;">Total Revenue:</td>
+              <td style="padding:15px 12px; text-align:right; color:#00b894; font-size:18px;">₹{order.total_price}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <p style="margin-top:30px; font-size:12px; color:#888; text-align:center; border-top:1px solid #eee; padding-top:15px;">
+          VistaarWater Admin System • Dynamic Orders Dispatcher
+        </p>
+      </div>
+    </body>
+    </html>"""
+
+    plain_text = f"New Order #{order.id} placed by {user.email}. Total Revenue: ₹{order.total_price}."
+    
+    success = True
+    for email in ["vistaarwater@gmail.com", "shubhjain0225@gmail.com"]:
+        ok, err = send_email_base(email, subject, plain_text, html_content)
+        if not ok:
+            success = False
+    return success
+
+
+def send_inquiry_notification_email(inquiry) -> bool:
+    """Sends inquiry quote request details to the admin mail list."""
+    subject = f"📩 New Quote Inquiry: #{inquiry.id} from {inquiry.name}"
+    
+    html_content = f"""<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>New Inquiry #{inquiry.id}</title>
+    </head>
+    <body style="font-family:Arial,sans-serif; color:#333; margin:0; padding:20px; background-color:#f8f9fa;">
+      <div style="max-width:600px; background:#fff; margin:0 auto; padding:30px; border-radius:12px; border:1px solid #e1e4e6;">
+        <h2 style="color:#3498db; margin-top:0; border-bottom:2px solid #3498db; padding-bottom:10px;">📩 New Quote Inquiry Placed</h2>
+        
+        <p><strong>Inquiry ID:</strong> #{inquiry.id}</p>
+        <p><strong>Name:</strong> {inquiry.name}</p>
+        <p><strong>Business Name:</strong> {inquiry.business_name or '—'}</p>
+        <p><strong>Email:</strong> {inquiry.email}</p>
+        <p><strong>Phone:</strong> {inquiry.phone or '—'}</p>
+        <p><strong>Bottle Size:</strong> {inquiry.bottle_size or '—'}</p>
+        <p><strong>Target Quantity:</strong> {inquiry.quantity or '—'}</p>
+        <p><strong>Requirements/Message:</strong></p>
+        <div style="background:#f4f7fa; padding:15px; border-radius:8px; border:1px solid #eee; margin-top:10px; font-style:italic;">
+          {inquiry.requirements or 'No special requirements listed.'}
+        </div>
+        
+        <p style="margin-top:30px; font-size:12px; color:#888; text-align:center; border-top:1px solid #eee; padding-top:15px;">
+          VistaarWater Admin System • Dynamic Lead Generation
+        </p>
+      </div>
+    </body>
+    </html>"""
+
+    plain_text = f"New inquiry #{inquiry.id} submitted by {inquiry.name} ({inquiry.email})."
+    
+    success = True
+    for email in ["vistaarwater@gmail.com", "shubhjain0225@gmail.com"]:
+        ok, err = send_email_base(email, subject, plain_text, html_content)
+        if not ok:
+            success = False
+    return success

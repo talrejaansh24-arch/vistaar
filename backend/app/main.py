@@ -165,9 +165,9 @@ async def startup_event():
     except Exception:
         pass  # Column already exists or DB doesn't support ALTER TABLE IF NOT EXISTS
 
-    # Auto-seed default data
+        # Auto-seed default data
     try:
-        from app.models import Product, User, SiteConfig
+        from app.models import Product, User, SiteConfig, AdminUpload
         from app.auth import hash_password
         from app.database import SessionLocal
         db = SessionLocal()

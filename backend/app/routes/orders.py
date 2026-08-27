@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Order, OrderItem, Product
 from app.schemas import OrderCreate, OrderResponse, OrderItemResponse
 from app.auth import get_current_user
 from app.services.pricing import calculate_price
+from app.services.email_service import send_order_notification_email
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
 
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/api/orders", tags=["orders"])
 @router.post("/", response_model=OrderResponse)
 def create_order(
     data: OrderCreate,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -28,6 +30,7 @@ def create_order(
     db.flush()
 
     total = 0
+    items_details = []
     for item_data in data.items:
         product = db.query(Product).filter(Product.id == item_data.product_id).first()
         if not product:
@@ -48,9 +51,26 @@ def create_order(
         db.add(item)
         total += subtotal
 
+        # Build items details for email notification
+        items_details.append({
+            "name": product.name,
+            "size": product.size,
+            "quantity": item_data.quantity,
+            "unit_price": pricing["unit_price"],
+            "subtotal": subtotal,
+            "preview_url": item_data.design_preview_url
+        })
+
     order.total_price = total
     db.commit()
     db.refresh(order)
+
+    # Send notification email to admins asynchronously
+    try:
+        background_tasks.add_task(send_order_notification_email, order, current_user, items_details)
+    except Exception as e:
+        print(f"[Order Email Alert] Failed to schedule task: {e}")
+
     return OrderResponse.model_validate(order)
 
 

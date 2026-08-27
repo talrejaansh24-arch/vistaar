@@ -82,6 +82,11 @@ export const adminAPI = {
   uploadTemplate: (formData) => api.post('/api/admin/templates/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  getUploads: () => api.get('/api/admin/uploads'),
+  uploadFile: (formData) => api.post('/api/admin/uploads', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteUpload: (id) => api.delete(`/api/admin/uploads/${id}`),
 };
 
 export const configAPI = {

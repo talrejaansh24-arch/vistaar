@@ -1,17 +1,19 @@
+import os
 import datetime
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Order, Product, SavedDesign, Inquiry, DesignTemplate
+from app.models import User, Order, Product, SavedDesign, Inquiry, DesignTemplate, AdminUpload
 from app.schemas import (
     OrderResponse, OrderStatusUpdate, ProductCreate, ProductUpdate,
     ProductResponse, InquiryResponse, SavedDesignResponse,
     UserResponse, UserStatusUpdate, DashboardMetricsResponse,
     DesignTemplateResponse, DesignTemplateCreate, ChangePasswordRequest,
+    AdminUploadResponse,
 )
 from app.auth import get_current_admin, verify_password, hash_password
-from app.config import TEMPLATES_DIR
+from app.config import TEMPLATES_DIR, UPLOADS_DIR
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -292,3 +294,69 @@ def upload_template_image(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     return {"file_path": f"/static/templates/{filename}"}
+
+
+# ── Generic Document & File Uploads Manager ──
+@router.post("/uploads", response_model=AdminUploadResponse)
+def upload_admin_file(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Upload any file format (PDF, PNG, JPG, SVG, ZIP, etc.) to the asset library."""
+    # Create safe unique filename
+    timestamp = int(datetime.datetime.utcnow().timestamp())
+    safe_filename = f"{timestamp}_{file.filename.replace(' ', '_')}"
+    file_path = UPLOADS_DIR / safe_filename
+    
+    # Save file to uploads folder
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Get file type extension
+    ext = os.path.splitext(file.filename)[1].replace('.', '').lower()
+    
+    # Save DB record
+    db_upload = AdminUpload(
+        filename=file.filename,
+        file_path=f"/static/uploads/{safe_filename}",
+        file_type=ext
+    )
+    db.add(db_upload)
+    db.commit()
+    db.refresh(db_upload)
+    return db_upload
+
+
+@router.get("/uploads", response_model=list[AdminUploadResponse])
+def list_admin_uploads(
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """List all generic file uploads (admin only)."""
+    return db.query(AdminUpload).order_by(AdminUpload.created_at.desc()).all()
+
+
+@router.delete("/uploads/{upload_id}")
+def delete_admin_upload(
+    upload_id: int,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Delete a generic file upload (admin only)."""
+    upload = db.query(AdminUpload).filter(AdminUpload.id == upload_id).first()
+    if not upload:
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    # Remove physical file if exists
+    try:
+        filename = os.path.basename(upload.file_path)
+        physical_path = UPLOADS_DIR / filename
+        if physical_path.exists():
+            physical_path.unlink()
+    except Exception as e:
+        print(f"[Admin Uploads] Error deleting physical file: {e}")
+        
+    db.delete(upload)
+    db.commit()
+    return {"message": "File deleted successfully"}

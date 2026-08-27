@@ -93,6 +93,7 @@ class SaveDesignRequest(BaseModel):
 
 class SavedDesignResponse(BaseModel):
     id: int
+    user_id: int
     name: Optional[str]
     canvas_json: Optional[str]
     preview_url: Optional[str]
@@ -265,3 +266,14 @@ class DesignTemplateCreate(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
+
+
+class AdminUploadResponse(BaseModel):
+    id: int
+    filename: str
+    file_path: str
+    file_type: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

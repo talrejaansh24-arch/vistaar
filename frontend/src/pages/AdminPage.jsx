@@ -35,6 +35,13 @@ export default function AdminPage() {
   const [contentError, setContentError] = useState('');
   const [contentLoading, setContentLoading] = useState(false);
 
+  // Generic File Upload State
+  const [uploads, setUploads] = useState([]);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState('');
+
   useEffect(() => {
     if (siteConfig) {
       setEditConfigs(siteConfig);
@@ -43,25 +50,44 @@ export default function AdminPage() {
 
   async function loadData() {
     try {
-      const [o, p, i, u, m, d, t] = await Promise.all([
-        adminAPI.getOrders(),
-        productAPI.list(),
-        adminAPI.getInquiries(),
-        adminAPI.getUsers(),
-        adminAPI.getMetrics(),
-        adminAPI.getDesigns(),
-        adminAPI.getTemplates(),
-      ]);
+      const o = await adminAPI.getOrders();
       setOrders(o.data);
+    } catch (err) { console.error("Failed to load orders", err); }
+
+    try {
+      const p = await productAPI.list();
       setProducts(p.data);
+    } catch (err) { console.error("Failed to load products", err); }
+
+    try {
+      const i = await adminAPI.getInquiries();
       setInquiries(i.data);
+    } catch (err) { console.error("Failed to load inquiries", err); }
+
+    try {
+      const u = await adminAPI.getUsers();
       setUsers(u.data);
+    } catch (err) { console.error("Failed to load users", err); }
+
+    try {
+      const m = await adminAPI.getMetrics();
       setMetrics(m.data);
+    } catch (err) { console.error("Failed to load metrics", err); }
+
+    try {
+      const d = await adminAPI.getDesigns();
       setAllDesigns(d.data);
+    } catch (err) { console.error("Failed to load designs", err); }
+
+    try {
+      const t = await adminAPI.getTemplates();
       setTemplates(t.data);
-    } catch (err) {
-      console.error("Failed to load admin dashboard data", err);
-    }
+    } catch (err) { console.error("Failed to load templates", err); }
+
+    try {
+      const uls = await adminAPI.getUploads();
+      setUploads(uls.data);
+    } catch (err) { console.error("Failed to load uploads", err); }
   }
 
   useEffect(() => {
@@ -191,6 +217,43 @@ export default function AdminPage() {
     }
   };
 
+  // Handle generic file upload
+  const handleFileUpload = async (e) => {
+    e.preventDefault();
+    setUploadError('');
+    setUploadSuccess('');
+    if (!uploadFile) {
+      setUploadError("Please choose a file to upload.");
+      return;
+    }
+    setUploadLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+      await adminAPI.uploadFile(formData);
+      setUploadSuccess("File uploaded successfully to Design library!");
+      setUploadFile(null);
+      document.getElementById('generic-file-input').value = '';
+      loadData();
+    } catch (err) {
+      setUploadError(err.response?.data?.detail || "Failed to upload file");
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  // Handle deleting uploaded file
+  const handleDeleteUpload = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this file? This action is permanent.")) return;
+    try {
+      await adminAPI.deleteUpload(id);
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete file");
+    }
+  };
+
   if (!user || user.role !== 'admin') return null;
 
   const statusOptions = ['pending', 'confirmed', 'production', 'shipped', 'delivered', 'cancelled'];
@@ -220,6 +283,7 @@ export default function AdminPage() {
         <button className={`tab-btn ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>📦 Orders ({orders.length})</button>
         <button className={`tab-btn ${tab === 'products' ? 'active' : ''}`} onClick={() => setTab('products')}>📋 Products</button>
         <button className={`tab-btn ${tab === 'templates' ? 'active' : ''}`} onClick={() => setTab('templates')}>🎨 Custom Templates ({templates.length})</button>
+        <button className={`tab-btn ${tab === 'uploads' ? 'active' : ''}`} onClick={() => setTab('uploads')}>📁 Design Files ({uploads.length})</button>
         <button className={`tab-btn ${tab === 'content' ? 'active' : ''}`} onClick={() => setTab('content')}>✏️ Site Content</button>
         <button className={`tab-btn ${tab === 'inquiries' ? 'active' : ''}`} onClick={() => setTab('inquiries')}>📩 Inquiries ({inquiries.length})</button>
       </div>
@@ -567,6 +631,114 @@ export default function AdminPage() {
             {templates.length === 0 && <p className="empty-state">No custom templates uploaded yet</p>}
           </div>
 
+        </div>
+      )}
+
+      {/* Dynamic File Library (PDF, Zip, Image, etc.) Upload Manager */}
+      {tab === 'uploads' && (
+        <div className="glass" style={{ padding: '32px', borderRadius: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+            <div>
+              <h3>📁 Asset & Design Library</h3>
+              <p className="text-secondary" style={{ fontSize: '0.88rem' }}>Upload any print file, design format, PDF mockups, ZIP source assets, or graphics. Easily manage and copy URL links to share with customers.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleFileUpload} className="glass" style={{ padding: '24px', borderRadius: '12px', border: '1px dashed var(--border)', marginBottom: '32px' }}>
+            <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>📤 Upload New File</h4>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '240px' }}>
+                <input 
+                  type="file" 
+                  id="generic-file-input"
+                  className="input" 
+                  style={{ padding: '8px 12px' }}
+                  onChange={(e) => setUploadFile(e.target.files[0])}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px' }} disabled={uploadLoading}>
+                {uploadLoading ? 'Uploading...' : '🚀 Start Upload'}
+              </button>
+            </div>
+            {uploadError && <p className="text-danger" style={{ marginTop: '12px', fontSize: '0.88rem' }}>⚠️ {uploadError}</p>}
+            {uploadSuccess && <p className="text-success" style={{ marginTop: '12px', fontSize: '0.88rem' }}>✅ {uploadSuccess}</p>}
+          </form>
+
+          <div>
+            <h4 style={{ marginBottom: '16px', fontWeight: 'bold' }}>🗃️ Uploaded Design Library ({uploads.length} files)</h4>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Filename</th>
+                    <th>Type</th>
+                    <th>Date Uploaded</th>
+                    <th>Download Link</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uploads.map((up) => {
+                    const relativeUrl = up.file_path;
+                    const fullUrl = `${window.location.origin}${resolveAssetUrl(relativeUrl)}`;
+                    return (
+                      <tr key={up.id}>
+                        <td><strong>{up.filename}</strong></td>
+                        <td>
+                          <span className="badge badge-info" style={{ textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                            {up.file_type || 'RAW'}
+                          </span>
+                        </td>
+                        <td>{new Date(up.created_at).toLocaleDateString()} at {new Date(up.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <input 
+                              type="text" 
+                              className="input" 
+                              value={fullUrl} 
+                              readOnly 
+                              style={{ width: '220px', fontSize: '0.78rem', height: '28px', padding: '0 8px' }} 
+                              onClick={(e) => e.target.select()}
+                            />
+                            <button 
+                              className="btn btn-secondary btn-sm"
+                              style={{ height: '28px', padding: '0 10px', fontSize: '0.75rem', justifyContent: 'center' }}
+                              onClick={() => {
+                                navigator.clipboard.writeText(fullUrl);
+                                alert("File URL copied to clipboard!");
+                              }}
+                            >
+                              📋 Copy Link
+                            </button>
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <a 
+                            href={resolveAssetUrl(relativeUrl)} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-secondary btn-sm mr-2"
+                            style={{ display: 'inline-flex', padding: '6px 12px', fontSize: '0.75rem', textDecoration: 'none' }}
+                          >
+                            📥 Download
+                          </a>
+                          <button 
+                            className="btn btn-error btn-sm"
+                            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                            onClick={() => handleDeleteUpload(up.id)}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {uploads.length === 0 && <p className="empty-state">No uploaded design files found</p>}
+            </div>
+          </div>
         </div>
       )}
 
