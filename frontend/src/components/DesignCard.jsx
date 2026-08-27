@@ -22,7 +22,8 @@ export default function DesignCard({ design }) {
     navigate('/editor');
   };
 
-  const handleQuickOrder = () => {
+  const handleQuickOrder = (e) => {
+    e.stopPropagation();
     addToCart({
       design,
       productId: 2,
@@ -34,7 +35,7 @@ export default function DesignCard({ design }) {
   };
 
   return (
-    <div className="design-card card" ref={cardRef}>
+    <div className="design-card card" ref={cardRef} onClick={handleCustomize} style={{ cursor: 'pointer' }}>
       <div className="design-preview">
         <img src={design.preview_url} alt={design.name} />
         <div className="design-overlay">
