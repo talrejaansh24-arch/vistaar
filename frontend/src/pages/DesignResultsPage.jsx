@@ -8,7 +8,7 @@ import { Check, ShoppingBag, ArrowRight } from 'lucide-react';
 import './DesignResultsPage.css';
 
 export default function DesignResultsPage() {
-  const { generatedDesigns, setGeneratedDesigns, designInput, setDesignInput, addToCart, user } = useStore();
+  const { generatedDesigns, setGeneratedDesigns, designInput, setDesignInput, addToCart, user, siteConfig } = useStore();
   const navigate = useNavigate();
   const pageRef = useRef(null);
 
@@ -71,19 +71,23 @@ export default function DesignResultsPage() {
   const selectedDesignObj = generatedDesigns.find(d => d.id === selectedDesignId) || generatedDesigns[0];
 
   const sizePrices = {
-    '250ml': 15,
-    '500ml': 20,
-    '1000ml': 30
+    '250ml': parseFloat(siteConfig?.price_250ml || 15),
+    '500ml': parseFloat(siteConfig?.price_500ml || 20),
+    '1000ml': parseFloat(siteConfig?.price_1000ml || 30)
   };
 
   const basePrice = sizePrices[selectedSize] || 20;
 
   // Bulk Discount calculation
   const getPricing = (quantity, base) => {
+    const d500 = parseFloat(siteConfig?.discount_500 || 5) / 100;
+    const d1000 = parseFloat(siteConfig?.discount_1000 || 10) / 100;
+    const d2000 = parseFloat(siteConfig?.discount_2000 || 15) / 100;
+
     let discount = 0;
-    if (quantity >= 2000) discount = 0.15;
-    else if (quantity >= 1000) discount = 0.10;
-    else if (quantity >= 500) discount = 0.05;
+    if (quantity >= 2000) discount = d2000;
+    else if (quantity >= 1000) discount = d1000;
+    else if (quantity >= 500) discount = d500;
     
     const unit = base * (1 - discount);
     const total = unit * quantity;

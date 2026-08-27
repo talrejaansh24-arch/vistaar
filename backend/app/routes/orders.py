@@ -36,7 +36,7 @@ def create_order(
         if not product:
             raise HTTPException(status_code=404, detail=f"Product {item_data.product_id} not found")
 
-        pricing = calculate_price(product.size, item_data.quantity)
+        pricing = calculate_price(db, product.size, item_data.quantity)
         subtotal = pricing["total_price"]
 
         item = OrderItem(

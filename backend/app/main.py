@@ -240,6 +240,20 @@ async def startup_event():
                 db.add(SiteConfig(key=k, value=v))
             print("Auto-seeded default site configurations.")
 
+        # Seed dynamic pricing configurations if missing
+        pricing_keys = {
+            "price_250ml": "15",
+            "price_500ml": "20",
+            "price_1000ml": "30",
+            "discount_500": "5",
+            "discount_1000": "10",
+            "discount_2000": "15"
+        }
+        for k, v in pricing_keys.items():
+            if db.query(SiteConfig).filter(SiteConfig.key == k).count() == 0:
+                db.add(SiteConfig(key=k, value=v))
+                print(f"Auto-seeded default pricing key: {k} = {v}")
+
         db.commit()
         db.close()
     except Exception as e:

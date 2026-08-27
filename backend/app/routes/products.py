@@ -16,7 +16,7 @@ def list_products(db: Session = Depends(get_db)):
 
 
 @router.post("/calculate-price", response_model=PriceCalculateResponse)
-def calc_price(data: PriceCalculateRequest):
+def calc_price(data: PriceCalculateRequest, db: Session = Depends(get_db)):
     """Calculate price with bulk discounts."""
-    result = calculate_price(data.bottle_size, data.quantity)
+    result = calculate_price(db, data.bottle_size, data.quantity)
     return PriceCalculateResponse(**result)

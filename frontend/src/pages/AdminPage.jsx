@@ -887,6 +887,77 @@ export default function AdminPage() {
               </div>
             </div>
 
+            {/* PRICING & DISCOUNTS CONFIG */}
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+              <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>💰 Dynamic Pricing & Bulk Discount Rules</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>250ml Price (Rs)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    placeholder="e.g. 15"
+                    value={editConfigs.price_250ml || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, price_250ml: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>500ml Price (Rs)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    placeholder="e.g. 20"
+                    value={editConfigs.price_500ml || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, price_500ml: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>1000ml Price (Rs)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    placeholder="e.g. 30"
+                    value={editConfigs.price_1000ml || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, price_1000ml: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Discount for qty ≥ 500 (%)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    placeholder="e.g. 5"
+                    value={editConfigs.discount_500 || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, discount_500: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Discount for qty ≥ 1000 (%)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    placeholder="e.g. 10"
+                    value={editConfigs.discount_1000 || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, discount_1000: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Discount for qty ≥ 2000 (%)</label>
+                  <input 
+                    type="number" 
+                    className="input" 
+                    placeholder="e.g. 15"
+                    value={editConfigs.discount_2000 || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, discount_2000: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
             {contentError && <p className="text-danger">⚠️ {contentError}</p>}
             {contentSuccess && <p className="text-success">✅ {contentSuccess}</p>}
 

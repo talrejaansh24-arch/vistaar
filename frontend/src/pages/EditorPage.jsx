@@ -22,7 +22,7 @@ const ARTBOARD_HEIGHT = 340;
 
 export default function EditorPage() {
   const navigate = useNavigate();
-  const { currentDesign, generatedDesigns, setGeneratedDesigns, addToCart, setLoading, designInput } = useStore();
+  const { currentDesign, generatedDesigns, setGeneratedDesigns, addToCart, setLoading, designInput, siteConfig } = useStore();
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
 
@@ -33,6 +33,11 @@ export default function EditorPage() {
   const [textDraft, setTextDraft] = useState(() => currentDesign?.business_name || designInput?.business_name || 'YOUR BRAND');
   const [taglineDraft, setTaglineDraft] = useState(() => currentDesign?.bottle_text || designInput?.bottle_text || 'PREMIUM DRINKING WATER');
   const [fontSize, setFontSize] = useState(44);
+  const bottleSizes = useMemo(() => [
+    { id: '250ml', label: '250ml', price: parseFloat(siteConfig?.price_250ml || 15) },
+    { id: '500ml', label: '500ml', price: parseFloat(siteConfig?.price_500ml || 20) },
+    { id: '1000ml', label: '1000ml', price: parseFloat(siteConfig?.price_1000ml || 30) },
+  ], [siteConfig]);
   const [textColor, setTextColor] = useState(() => currentDesign?.colors?.[1] || '#55efc4');
   const [labelColor, setLabelColor] = useState(() => currentDesign?.colors?.[0] || '#0a3d2f');
   const [activeStyleName, setActiveStyleName] = useState(() => currentDesign?.style || 'Brandex');
@@ -1667,8 +1672,23 @@ export default function EditorPage() {
     };
   }, [currentDesign, navigate]);
 
-  const unitPrice = useMemo(() => BOTTLE_SIZES.find((x) => x.id === activeSize)?.price || 20, [activeSize]);
-  const totalPrice = useMemo(() => unitPrice * quantity, [unitPrice, quantity]);
+  const unitPrice = useMemo(() => {
+    const base = bottleSizes.find((x) => x.id === activeSize)?.price || 20;
+    const d500 = parseFloat(siteConfig?.discount_500 || 5) / 100;
+    const d1000 = parseFloat(siteConfig?.discount_1000 || 10) / 100;
+    const d2000 = parseFloat(siteConfig?.discount_2000 || 15) / 100;
+
+    let discount = 0;
+    if (quantity >= 2000) discount = d2000;
+    else if (quantity >= 1000) discount = d1000;
+    else if (quantity >= 500) discount = d500;
+    
+    return Math.round(base * (1 - discount) * 100) / 100;
+  }, [activeSize, bottleSizes, quantity, siteConfig]);
+
+  const totalPrice = useMemo(() => {
+    return Math.round(unitPrice * quantity * 100) / 100;
+  }, [unitPrice, quantity]);
 
   const updateActiveTextbox = (patch) => {
     const canvas = fabricRef.current;
@@ -2924,7 +2944,7 @@ if __name__ == "__main__":
             <h3>Order Details</h3>
             <label>Bottle Size</label>
             <select className="input" value={activeSize} onChange={(e) => setActiveSize(e.target.value)}>
-              {BOTTLE_SIZES.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
+              {bottleSizes.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
             </select>
             <label>Quantity</label>
             <input className="input" type="number" min="50" step="50" value={quantity} onChange={(e) => setQuantity(Math.max(50, Number(e.target.value) || 50))} />
