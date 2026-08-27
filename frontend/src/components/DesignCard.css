@@ -109,23 +109,37 @@
 
 @media (hover: none), (max-width: 768px) {
   .design-overlay {
-    position: static;
-    opacity: 1;
-    background: var(--bg-secondary);
-    padding: 12px;
+    position: absolute;
+    opacity: 1 !important;
+    background: linear-gradient(180deg, rgba(10,14,23,0) 0%, rgba(10,14,23,0.9) 100%);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 12px;
   }
   .overlay-content {
-    width: 100%;
-    flex-direction: row;
-    transform: none;
+    width: 92%;
+    flex-direction: row !important;
+    transform: none !important;
+    gap: 8px;
   }
   .overlay-content .btn {
     flex: 1;
+    padding: 8px 6px;
+    font-size: 0.75rem;
+    min-height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   .overlay-content {
-    flex-direction: column;
+    gap: 6px;
+  }
+  .overlay-content .btn {
+    padding: 6px 4px;
+    font-size: 0.7rem;
   }
 }
