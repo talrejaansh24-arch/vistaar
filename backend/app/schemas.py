@@ -167,11 +167,14 @@ class OrderItemResponse(BaseModel):
 
 class OrderResponse(BaseModel):
     id: int
+    user_id: int
     status: str
     total_price: float
     shipping_address: Optional[str]
+    billing_address: Optional[str]
     payment_method: Optional[str]
     payment_status: str
+    notes: Optional[str]
     items: List[OrderItemResponse]
     created_at: datetime
     updated_at: datetime

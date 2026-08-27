@@ -16,6 +16,7 @@ export default function AdminPage() {
   const [allDesigns, setAllDesigns] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [viewUserDesigns, setViewUserDesigns] = useState(null);
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
 
   // Password Settings State
   const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
@@ -466,44 +467,123 @@ export default function AdminPage() {
       )}
 
       {tab === 'orders' && (
-        <div className="admin-table-wrap glass">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Status</th>
-                <th>Total Revenue</th>
-                <th>Bottles Order</th>
-                <th>Order Date</th>
-                <th>Actions & Status Updates</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => (
-                <tr key={o.id}>
-                  <td><strong>#{o.id}</strong></td>
-                  <td>{users.find((u) => u.id === o.user_id)?.email || 'Unknown'}</td>
-                  <td><span className={`badge ${statusColors[o.status]}`}>{o.status}</span></td>
-                  <td>₹{o.total_price.toLocaleString()}</td>
-                  <td>{o.items?.length || 0} items (Bulk Bottles)</td>
-                  <td>{new Date(o.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <select 
-                      className="input order-status-select" 
-                      value={o.status}
-                      onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+        <div className="admin-orders-panel">
+          {orders.length === 0 ? (
+            <div className="empty-state glass" style={{ textAlign: 'center', padding: '48px 24px' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📦</div>
+              <h3>No Orders Yet</h3>
+              <p style={{ color: 'var(--text-muted)' }}>Orders placed by customers will appear here with full details.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {orders.map((o) => {
+                const customer = users.find((u) => u.id === o.user_id);
+                const isExpanded = expandedOrderId === o.id;
+                return (
+                  <div key={o.id} className="glass" style={{ borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+                    {/* Order Header Row */}
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', cursor: 'pointer', flexWrap: 'wrap' }}
+                      onClick={() => setExpandedOrderId(isExpanded ? null : o.id)}
                     >
-                      {statusOptions.map((s) => <option key={s} value={s}>{s.toUpperCase()}</option>)}
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {orders.length === 0 && <p className="empty-state">No orders placed yet</p>}
+                      <div style={{ minWidth: '90px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>ORDER ID</div>
+                        <strong style={{ fontSize: '1.05rem', color: 'var(--accent)' }}>#{o.id}</strong>
+                      </div>
+                      <div style={{ flex: 1, minWidth: '160px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>CUSTOMER</div>
+                        <div style={{ fontWeight: '600' }}>{customer?.business_name || customer?.email || 'Unknown Customer'}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{customer?.email}</div>
+                      </div>
+                      <div style={{ minWidth: '100px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>STATUS</div>
+                        <span className={`badge ${statusColors[o.status]}`}>{o.status}</span>
+                      </div>
+                      <div style={{ minWidth: '90px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>TOTAL</div>
+                        <strong>₹{o.total_price?.toLocaleString()}</strong>
+                      </div>
+                      <div style={{ minWidth: '80px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>ITEMS</div>
+                        <span>{o.items?.length || 0} item(s)</span>
+                      </div>
+                      <div style={{ minWidth: '110px' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px' }}>DATE</div>
+                        <span>{new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      <div style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '1.2rem' }}>
+                        {isExpanded ? '▲' : '▼'}
+                      </div>
+                    </div>
+
+                    {/* Expandable Detail Panel */}
+                    {isExpanded && (
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '20px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                          {/* Shipping Info */}
+                          <div className="glass" style={{ padding: '14px 18px', borderRadius: '10px' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600', letterSpacing: '0.5px' }}>📍 SHIPPING ADDRESS</div>
+                            <p style={{ margin: 0, lineHeight: 1.6 }}>{o.shipping_address || '—'}</p>
+                          </div>
+                          {/* Customer Contact */}
+                          <div className="glass" style={{ padding: '14px 18px', borderRadius: '10px' }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: '600', letterSpacing: '0.5px' }}>👤 CUSTOMER DETAILS</div>
+                            <p style={{ margin: '0 0 4px' }}><strong>{customer?.business_name || 'N/A'}</strong></p>
+                            <p style={{ margin: '0 0 4px', fontSize: '0.87rem' }}>📧 {customer?.email}</p>
+                            <p style={{ margin: '0 0 4px', fontSize: '0.87rem' }}>📱 {customer?.phone || 'Not provided'}</p>
+                            {o.notes && <p style={{ margin: '6px 0 0', fontSize: '0.83rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Note: {o.notes}</p>}
+                          </div>
+                        </div>
+
+                        {/* Order Items */}
+                        <div style={{ marginBottom: '20px' }}>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '10px', fontWeight: '600', letterSpacing: '0.5px' }}>📋 ORDER ITEMS</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {(o.items || []).map((item, idx) => (
+                              <div key={item.id || idx} className="glass" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderRadius: '10px' }}>
+                                {item.design_preview_url && (
+                                  <img
+                                    src={resolveAssetUrl(item.design_preview_url)}
+                                    alt="Design Preview"
+                                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}
+                                    onError={(e) => { e.target.style.display = 'none'; }}
+                                  />
+                                )}
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>Product ID: {item.product_id} — Qty: <strong>{item.quantity} units</strong></div>
+                                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Unit Price: ₹{item.unit_price} | Subtotal: <strong>₹{item.subtotal?.toLocaleString()}</strong></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Status Update */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-muted)' }}>🔄 Update Status:</div>
+                          <select
+                            className="input order-status-select"
+                            value={o.status}
+                            onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                            style={{ minWidth: '160px' }}
+                          >
+                            {statusOptions.map((s) => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                          </select>
+                          <div style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            Order #{o.id} placed on {new Date(o.created_at).toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
+
+
 
       {tab === 'products' && (
         <div className="products-grid">

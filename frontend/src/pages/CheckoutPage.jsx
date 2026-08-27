@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
+import { orderAPI } from '../api/client';
 import './CheckoutPage.css';
 
 export default function CheckoutPage() {
@@ -9,13 +10,42 @@ export default function CheckoutPage() {
   const [step, setStep] = useState('address'); // address | payment | success
   const [address, setAddress] = useState({ line1: '', city: '', state: '', pincode: '', phone: '' });
   const [orderId, setOrderId] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const total = cart.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
-  const handlePlaceOrder = () => {
-    setOrderId(`VIS-${Date.now().toString().slice(-6)}`);
-    setStep('success');
-    setTimeout(() => clearCart(), 1000);
+  const handlePlaceOrder = async () => {
+    if (!address.line1 || !address.city || !address.state || !address.pincode || !address.phone) {
+      setError("Please fill out all address fields.");
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const payload = {
+        items: cart.map((item) => ({
+          product_id: item.productId || 2,
+          design_json: item.design?.canvas_json || JSON.stringify(item.design || {}),
+          design_preview_url: item.design?.preview_url || '',
+          quantity: item.quantity,
+        })),
+        shipping_address: `${address.line1}, ${address.city}, ${address.state} - ${address.pincode}. Phone: ${address.phone}`,
+        billing_address: `${address.line1}, ${address.city}, ${address.state} - ${address.pincode}. Phone: ${address.phone}`,
+        payment_method: 'upi',
+        notes: `Order placed by ${user.business_name || user.email}`,
+      };
+      
+      const res = await orderAPI.create(payload);
+      setOrderId(res.data.id.toString());
+      setStep('success');
+      clearCart();
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.detail || err.message || "Failed to place order.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user) return <Navigate to="/login" replace />;
@@ -88,11 +118,18 @@ export default function CheckoutPage() {
                 ))}
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
-                * This is a demo checkout. No real payment will be processed.
+                * Orders are confirmed upon submission and sent to our team immediately.
               </p>
+              {error && (
+                <p style={{ color: 'var(--error, #e74c3c)', fontSize: '0.9rem', background: 'rgba(231,76,60,0.1)', padding: '10px 14px', borderRadius: '8px', borderLeft: '3px solid var(--error, #e74c3c)' }}>
+                  ⚠️ {error}
+                </p>
+              )}
               <div style={{ display: 'flex', gap: '12px' }}>
-                <button className="btn btn-ghost" onClick={() => setStep('address')}>← Back</button>
-                <button className="btn btn-primary" onClick={handlePlaceOrder}>Place Order — ₹{total.toLocaleString()}</button>
+                <button className="btn btn-ghost" onClick={() => setStep('address')} disabled={loading}>← Back</button>
+                <button className="btn btn-primary" onClick={handlePlaceOrder} disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>
+                  {loading ? '⏳ Placing Order...' : `Place Order — ₹${total.toLocaleString()}`}
+                </button>
               </div>
             </div>
           )}
