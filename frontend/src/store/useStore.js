@@ -40,7 +40,7 @@ const useStore = create((set, get) => ({
   savedDesigns: [],
   fetchSavedDesigns: async () => {
     try {
-      const res = await designAPI.listSaved();
+      const res = await designAPI.list();
       set({ savedDesigns: res.data });
     } catch (e) {
       console.error("Failed to fetch saved designs", e);
@@ -64,7 +64,7 @@ const useStore = create((set, get) => ({
   },
   deleteSavedDesign: async (designId) => {
     try {
-      await designAPI.deleteSaved(designId);
+      await designAPI.delete(designId);
       set((state) => ({ savedDesigns: state.savedDesigns.filter(d => d.id !== designId) }));
     } catch (e) {
       console.error("Failed to delete saved design", e);
