@@ -1432,8 +1432,21 @@ export default function EditorPage() {
     setLabelColor(initialBg);
     setTextColor(initialTxt);
 
-    renderStyleVector(canvas, initialStyle, textDraft, taglineDraft, initialBg, initialTxt);
-    saveHistoryState();
+    if (currentDesign?.canvas_json) {
+      try {
+        canvas.loadFromJSON(JSON.parse(currentDesign.canvas_json)).then(() => {
+          canvas.renderAll();
+          saveHistoryState();
+        });
+      } catch (err) {
+        console.error("Failed to load saved design canvas:", err);
+        renderStyleVector(canvas, initialStyle, textDraft, taglineDraft, initialBg, initialTxt);
+        saveHistoryState();
+      }
+    } else {
+      renderStyleVector(canvas, initialStyle, textDraft, taglineDraft, initialBg, initialTxt);
+      saveHistoryState();
+    }
 
     // ResizeObserver to prevent offset jump bugs on layout width changes
     const resizeObserver = new ResizeObserver(() => {
