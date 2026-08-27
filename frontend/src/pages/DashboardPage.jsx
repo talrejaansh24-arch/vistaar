@@ -6,24 +6,22 @@ import { Trash2, PenTool, ExternalLink, Calendar, Mail, Phone, Briefcase, Plus, 
 import './DashboardPage.css';
 
 export default function DashboardPage() {
-  const { user, setCurrentDesign } = useStore();
+  const { user, setCurrentDesign, savedDesigns, fetchSavedDesigns, deleteSavedDesign } = useStore();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
-  const [designs, setDesigns] = useState([]);
   const [products, setProducts] = useState([]);
   const [tab, setTab] = useState('orders');
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     try {
-      const [ordersRes, designsRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes] = await Promise.all([
         orderAPI.list(),
-        designAPI.list(),
         productAPI.list()
       ]);
       setOrders(ordersRes.data);
-      setDesigns(designsRes.data);
       setProducts(productsRes.data);
+      await fetchSavedDesigns();
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
     } finally {
@@ -50,8 +48,7 @@ export default function DashboardPage() {
     e.stopPropagation();
     if (!window.confirm("Are you sure you want to delete this saved design?")) return;
     try {
-      await designAPI.delete(id);
-      setDesigns(designs.filter(d => d.id !== id));
+      await deleteSavedDesign(id);
     } catch (err) {
       console.error(err);
       alert("Failed to delete design");
@@ -120,7 +117,7 @@ export default function DashboardPage() {
               <PenTool size={22} />
             </div>
             <div className="stat-content">
-              <h3>{designs.length}</h3>
+              <h3>{savedDesigns.length}</h3>
               <p>Saved Designs Library</p>
             </div>
           </div>
@@ -149,7 +146,7 @@ export default function DashboardPage() {
               className={`tab-link-btn ${tab === 'designs' ? 'active-tab' : ''}`} 
               onClick={() => setTab('designs')}
             >
-              🎨 My Saved Designs ({designs.length})
+              🎨 My Saved Designs ({savedDesigns.length})
             </button>
           </div>
 
@@ -226,7 +223,7 @@ export default function DashboardPage() {
 
               {tab === 'designs' && (
                 <div className="saved-designs-showcase">
-                  {designs.length === 0 ? (
+                  {savedDesigns.length === 0 ? (
                     <div className="empty-dashboard-state glass">
                       <div className="empty-icon">🎨</div>
                       <h3>Your Design Library is Empty</h3>
@@ -235,7 +232,7 @@ export default function DashboardPage() {
                     </div>
                   ) : (
                     <div className="saved-designs-grid-layout">
-                      {designs.map((d) => (
+                      {savedDesigns.map((d) => (
                         <div key={d.id} className="saved-design-show-card glass" onClick={() => handleCustomize(d)}>
                           <div className="saved-preview-wrapper">
                             {d.preview_url && <img src={resolveAssetUrl(d.preview_url)} alt={d.name} />}

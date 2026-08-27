@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { configAPI } from '../api/client';
+import { configAPI, designAPI, authAPI } from '../api/client';
 
 const safeJSONParse = (item, fallback) => {
   if (!item || item === 'undefined') return fallback;
@@ -15,7 +15,12 @@ const useStore = create((set, get) => ({
     localStorage.setItem('vistaarwater_token', token);
     set({ user, token });
   },
-  logout: () => {
+  logout: async () => {
+    try {
+      await authAPI.logout();
+    } catch (e) {
+      console.warn("Server logout failed", e);
+    }
     localStorage.removeItem('vistaarwater_user');
     localStorage.removeItem('vistaarwater_token');
     set({ user: null, token: null });
@@ -30,6 +35,41 @@ const useStore = create((set, get) => ({
   // Current editor design
   currentDesign: null,
   setCurrentDesign: (design) => set({ currentDesign: design }),
+
+  // Saved designs
+  savedDesigns: [],
+  fetchSavedDesigns: async () => {
+    try {
+      const res = await designAPI.listSaved();
+      set({ savedDesigns: res.data });
+    } catch (e) {
+      console.error("Failed to fetch saved designs", e);
+    }
+  },
+  saveDesign: async (design) => {
+    try {
+      const payload = {
+        name: design.name || "Custom Design",
+        canvas_json: design.canvas_json || JSON.stringify(design),
+        preview_url: design.preview_url,
+        template_id: design.template_id || null
+      };
+      const res = await designAPI.save(payload);
+      set((state) => ({ savedDesigns: [res.data, ...state.savedDesigns] }));
+      return res.data;
+    } catch (e) {
+      console.error("Failed to save design", e);
+      throw e;
+    }
+  },
+  deleteSavedDesign: async (designId) => {
+    try {
+      await designAPI.deleteSaved(designId);
+      set((state) => ({ savedDesigns: state.savedDesigns.filter(d => d.id !== designId) }));
+    } catch (e) {
+      console.error("Failed to delete saved design", e);
+    }
+  },
 
   // Cart
   cart: safeJSONParse(localStorage.getItem('vistaarwater_cart'), []),

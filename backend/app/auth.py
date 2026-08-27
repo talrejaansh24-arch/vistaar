@@ -85,6 +85,7 @@ def get_current_user(
     """Dependency: Get the current authenticated user."""
     payload = decode_token(credentials.credentials)
     user_id = payload.get("sub")
+    token_session_version = payload.get("session_version")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
@@ -93,6 +94,10 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="User not found")
     if user.is_suspended:
         raise HTTPException(status_code=403, detail="User account is suspended")
+
+    db_session_version = getattr(user, "session_version", 1)
+    if token_session_version is not None and token_session_version != db_session_version:
+        raise HTTPException(status_code=401, detail="Session invalidated. Logged out from everywhere.")
     return user
 
 

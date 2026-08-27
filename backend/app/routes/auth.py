@@ -73,7 +73,6 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
     # Find or create user
     user = db.query(User).filter(User.email == email_clean).first()
     if not user:
-        # Should normally be created in /register, but fallback just in case
         user = User(email=email_clean, password_hash="")
         db.add(user)
         db.commit()
@@ -82,7 +81,13 @@ def verify_otp(data: VerifyOTPRequest, db: Session = Depends(get_db)):
     if user.is_suspended:
         raise HTTPException(status_code=403, detail="User account is suspended")
 
-    token = create_access_token({"sub": str(user.id)})
+    if data.force_logout:
+        user.session_version = getattr(user, "session_version", 1) + 1
+
+    user.is_logged_in = True
+    db.commit()
+
+    token = create_access_token({"sub": str(user.id), "session_version": getattr(user, "session_version", 1)})
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user),
@@ -128,9 +133,25 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     if user.is_suspended:
         raise HTTPException(status_code=403, detail="User account is suspended")
 
+    # Check if user is logged in on another device
+    is_user_logged_in = getattr(user, "is_logged_in", False)
+    if is_user_logged_in and not data.force_logout:
+        return {
+            "requires_logout_override": True,
+            "message": "You are already logged in on another device. Do you want to logout from everywhere else?"
+        }
+
+    # If force logout is checked, increment the session version to invalidate all other JWTs
+    if data.force_logout:
+        user.session_version = getattr(user, "session_version", 1) + 1
+        user.is_logged_in = False
+        db.commit()
+
     # Admin bypasses OTP
     if user.role == "admin":
-        token = create_access_token({"sub": str(user.id)})
+        user.is_logged_in = True
+        db.commit()
+        token = create_access_token({"sub": str(user.id), "session_version": getattr(user, "session_version", 1)})
         return TokenResponse(
             access_token=token,
             user=UserResponse.model_validate(user),
@@ -186,8 +207,30 @@ def google_auth(data: GoogleAuthRequest, db: Session = Depends(get_db)):
     if user.is_suspended:
         raise HTTPException(status_code=403, detail="User account is suspended")
 
-    token = create_access_token({"sub": str(user.id)})
+    is_user_logged_in = getattr(user, "is_logged_in", False)
+    if is_user_logged_in and not data.force_logout:
+        return {
+            "requires_logout_override": True,
+            "message": "You are already logged in on another device. Do you want to logout from everywhere else?"
+        }
+
+    if data.force_logout:
+        user.session_version = getattr(user, "session_version", 1) + 1
+        db.commit()
+
+    user.is_logged_in = True
+    db.commit()
+
+    token = create_access_token({"sub": str(user.id), "session_version": getattr(user, "session_version", 1)})
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user),
     ).model_dump()
+
+
+@router.post("/logout")
+def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Explicit logout to clear the active session state."""
+    current_user.is_logged_in = False
+    db.commit()
+    return {"message": "Logged out successfully"}

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 import DesignGrid from '../components/DesignGrid';
 import { pageTransition } from '../utils/animations';
-import { resolveAssetUrl } from '../api/client';
+import { designAPI, resolveAssetUrl } from '../api/client';
 import { Check, ShoppingBag, ArrowRight } from 'lucide-react';
 import './DesignResultsPage.css';
 
 export default function DesignResultsPage() {
-  const { generatedDesigns, designInput, addToCart } = useStore();
+  const { generatedDesigns, setGeneratedDesigns, designInput, setDesignInput, addToCart, user } = useStore();
   const navigate = useNavigate();
   const pageRef = useRef(null);
 
@@ -17,14 +17,54 @@ export default function DesignResultsPage() {
   const [selectedSize, setSelectedSize] = useState('500ml');
   const [qty, setQty] = useState(500);
   const [addedToast, setAddedToast] = useState(false);
+  const [fetchingDesigns, setFetchingDesigns] = useState(false);
 
   useEffect(() => {
-    if (!generatedDesigns.length) { navigate('/'); return; }
     if (pageRef.current) pageTransition(pageRef.current);
-    if (generatedDesigns.length > 0) {
+    
+    if (generatedDesigns.length === 0) {
+      const loadDefaultDesigns = async () => {
+        setFetchingDesigns(true);
+        try {
+          const res = await designAPI.generate({
+            business_name: user?.business_name || 'YOUR BRAND',
+            bottle_text: 'Pure Himalayan',
+            category: 'general',
+            bottle_size: '500ml',
+            style: 'modern'
+          });
+          setGeneratedDesigns(res.data.designs);
+          setDesignInput({
+            business_name: user?.business_name || 'YOUR BRAND',
+            bottle_text: 'Pure Himalayan',
+            category: 'general',
+            bottle_size: '500ml',
+            style: 'modern'
+          });
+          if (res.data.designs.length > 0) {
+            setSelectedDesignId(res.data.designs[0].id);
+          }
+        } catch (err) {
+          console.error("Failed to load default designs", err);
+          navigate('/');
+        } finally {
+          setFetchingDesigns(false);
+        }
+      };
+      loadDefaultDesigns();
+    } else {
       setSelectedDesignId(generatedDesigns[0].id);
     }
-  }, [generatedDesigns]);
+  }, [generatedDesigns.length, user, navigate, setGeneratedDesigns, setDesignInput]);
+
+  if (fetchingDesigns) {
+    return (
+      <div style={{ paddingTop: '150px', textAlign: 'center', minHeight: '80vh' }}>
+        <div className="spinner" style={{ margin: '0 auto' }} />
+        <p style={{ color: 'var(--text-secondary)', marginTop: '16px' }}>Loading designs library...</p>
+      </div>
+    );
+  }
 
   if (!generatedDesigns.length) return null;
 

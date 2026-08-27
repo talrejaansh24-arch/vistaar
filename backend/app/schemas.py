@@ -14,6 +14,7 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: Optional[str] = None
+    force_logout: bool = False
 
 
 class SendOTPRequest(BaseModel):
@@ -23,10 +24,12 @@ class SendOTPRequest(BaseModel):
 class VerifyOTPRequest(BaseModel):
     email: EmailStr
     otp_code: str
+    force_logout: bool = False
 
 
 class GoogleAuthRequest(BaseModel):
     credential: str  # Google ID token
+    force_logout: bool = False
 
 
 class UserResponse(BaseModel):

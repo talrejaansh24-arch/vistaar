@@ -206,14 +206,60 @@ def get_dashboard_metrics(
     users_with_orders_count = db.query(Order.user_id).distinct().count()
     conversion_rate = (users_with_orders_count / total_users * 100) if total_users > 0 else 0.0
     
-    # Most used categories
-    most_used = [
-        {"category": "Hotel & Hospitality", "count": 42},
-        {"category": "Cafes & Coffee Shops", "count": 31},
-        {"category": "Gyms & Fitness Centers", "count": 28},
-        {"category": "Corporate Events", "count": 19},
-        {"category": "Restaurants & Dine-in", "count": 15}
-    ]
+    # Query to count saved designs per category from real DB
+    from sqlalchemy import func
+    most_used = []
+    category_display_names = {
+        "hotel": "Hotel & Hospitality",
+        "cafe": "Cafes & Coffee Shops",
+        "gym": "Gyms & Fitness Centers",
+        "corporate": "Corporate Events",
+        "restaurant": "Restaurants & Dine-in",
+        "event": "Special Events & Parties",
+        "general": "General Custom Branding"
+    }
+    try:
+        category_counts = (
+            db.query(DesignTemplate.category, func.count(SavedDesign.id))
+            .join(SavedDesign, SavedDesign.template_id == DesignTemplate.id)
+            .group_by(DesignTemplate.category)
+            .order_by(func.count(SavedDesign.id).desc())
+            .limit(5)
+            .all()
+        )
+        for cat, count in category_counts:
+            display_name = category_display_names.get(cat.lower(), cat.capitalize())
+            most_used.append({"category": display_name, "count": count})
+    except Exception as e:
+        print(f"[Metrics] Category join query warning: {e}")
+
+    # Supplement if fewer than 5 categories exist
+    if len(most_used) < 5:
+        try:
+            all_templates = db.query(DesignTemplate.category).distinct().all()
+            for t_cat in all_templates:
+                cat_name = t_cat[0]
+                display_name = category_display_names.get(cat_name.lower(), cat_name.capitalize())
+                cnt = db.query(SavedDesign).join(DesignTemplate).filter(DesignTemplate.category == cat_name).count()
+                
+                # Check if already added
+                if not any(m["category"] == display_name for m in most_used):
+                    most_used.append({"category": display_name, "count": cnt})
+            
+            most_used.sort(key=lambda x: x["count"], reverse=True)
+            most_used = most_used[:5]
+        except Exception as e:
+            print(f"[Metrics] Category fill query warning: {e}")
+
+    # Fallback to defaults if DB is completely empty and throws error
+    if not most_used:
+        most_used = [
+            {"category": "Hotel & Hospitality", "count": 0},
+            {"category": "Cafes & Coffee Shops", "count": 0},
+            {"category": "Gyms & Fitness Centers", "count": 0},
+            {"category": "Corporate Events", "count": 0},
+            {"category": "Restaurants & Dine-in", "count": 0}
+        ]
     
     return DashboardMetricsResponse(
         total_users=total_users,

@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
+  const [showOverride, setShowOverride] = useState(false);
   const { setAuth, setGeneratedDesigns, setDesignInput, setLoading: setGlobalLoading } = useStore();
   const navigate = useNavigate();
 
@@ -218,13 +219,18 @@ export default function LoginPage() {
         setError('Error: Your VITE_API_ORIGIN in Render is incorrect. It is pointing to the Frontend URL instead of the Backend URL.');
         return;
       }
+      
+      if (res.data.requires_logout_override) {
+        setShowOverride(true);
+        return;
+      }
+
       if (res.data.requires_otp) {
         setOtpEmail(res.data.email);
         setResendCooldown(30);
         animateToOtp();
       } else if (res.data.access_token) {
         setAuth(res.data.user, res.data.access_token);
-        // Check for pending design first
         const handled = await handlePendingDesign();
         if (!handled) {
           navigate(res.data.user?.role === 'admin' ? '/admin' : '/');
@@ -235,6 +241,30 @@ export default function LoginPage() {
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Login failed');
     } finally { setLoading(false); }
+  };
+
+  const handleOverrideSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setLoading(true);
+    try {
+      const res = await authAPI.login({ ...form, force_logout: true });
+      if (res.data.requires_otp) {
+        setOtpEmail(res.data.email);
+        setResendCooldown(30);
+        setShowOverride(false);
+        animateToOtp();
+      } else if (res.data.access_token) {
+        setAuth(res.data.user, res.data.access_token);
+        const handled = await handlePendingDesign();
+        if (!handled) {
+          navigate(res.data.user?.role === 'admin' ? '/admin' : '/');
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Override login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ── OTP handlers ──
@@ -372,7 +402,7 @@ export default function LoginPage() {
           {error && <div className="auth-error">{error}</div>}
 
           {/* ─── Step 1: Credentials ─── */}
-          <form className="auth-form" ref={formRef} onSubmit={handleSubmit} style={{ display: step === 'credentials' ? 'flex' : 'none' }}>
+          <form className="auth-form" ref={formRef} onSubmit={handleSubmit} style={{ display: (step === 'credentials' && !showOverride) ? 'flex' : 'none' }}>
             <div className="auth-input-group">
               <label>Email address</label>
               <input className="auth-input" type="email" placeholder="you@business.com" required autoComplete="email"
@@ -402,6 +432,31 @@ export default function LoginPage() {
               <div id="google-signin-btn"></div>
             </div>
           </form>
+
+          {/* ─── Step 1.5: Logout Everywhere Override ─── */}
+          {showOverride && (
+            <div className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ background: 'rgba(241, 196, 15, 0.1)', border: '1px solid #f1c40f', borderRadius: '8px', padding: '16px', color: '#f39c12', fontSize: '0.9rem', lineHeight: '1.5' }}>
+                ⚠️ <strong>Session Alert:</strong> You are already logged in on another device. For security, you can only have one active session at a time.
+              </div>
+              <button 
+                className="auth-submit" 
+                onClick={handleOverrideSubmit} 
+                disabled={loading}
+                style={{ background: '#f1c40f', color: '#1a1a1a', fontWeight: 'bold' }}
+              >
+                {loading ? 'Processing...' : '🔓 Logout from Everywhere & Login Here'}
+              </button>
+              <button 
+                type="button" 
+                className="otp-back-btn" 
+                onClick={() => setShowOverride(false)}
+                style={{ marginTop: '0' }}
+              >
+                ← Back
+              </button>
+            </div>
+          )}
 
           {/* ─── Step 2: OTP ─── */}
           <div className="otp-section" ref={otpSectionRef} style={{ display: step === 'otp' ? 'flex' : 'none' }}>

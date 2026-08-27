@@ -420,7 +420,7 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => {
+              {users.filter(u => u.role !== 'admin').map((u) => {
                 const userDesignsCount = allDesigns.filter(d => d.user_id === u.id).length;
                 return (
                   <tr key={u.id}>

@@ -155,15 +155,17 @@ async def startup_event():
         print(f"[startup] Error creating tables: {e}")
         return
 
-    # Migration: add is_suspended column if missing
+    # Migration: add is_suspended, session_version, and is_logged_in columns if missing
     try:
         from sqlalchemy import text
         from app.database import engine
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 1"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_logged_in BOOLEAN DEFAULT FALSE"))
             conn.commit()
-    except Exception:
-        pass  # Column already exists or DB doesn't support ALTER TABLE IF NOT EXISTS
+    except Exception as migration_err:
+        print(f"[Migration Warning] Column alteration failed (already matches or unsupported): {migration_err}")
 
         # Auto-seed default data
     try:

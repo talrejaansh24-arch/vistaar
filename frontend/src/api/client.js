@@ -38,6 +38,7 @@ export const authAPI = {
   verifyOtp: (data) => api.post('/api/auth/verify-otp', data),
   googleLogin: (data) => api.post('/api/auth/google', data),
   getMe: () => api.get('/api/auth/me'),
+  logout: () => api.post('/api/auth/logout'),
 };
 
 export const designAPI = {
