@@ -1,9 +1,11 @@
 import HeroSection from '../components/HeroSection';
 import { useEffect, useRef } from 'react';
+import useStore from '../store/useStore';
 import { scrollReveal, waveAnimation, drawTimeline, marqueeScroll } from '../utils/animations';
 import './HomePage.css';
 
 export default function HomePage() {
+  const { siteConfig } = useStore();
   const sectionRefs = useRef([]);
   const stepsGridRef = useRef(null);
   const timelineRef = useRef(null);
@@ -55,7 +57,7 @@ export default function HomePage() {
 
       <section className="trusted-section" ref={addRef}>
         <div className="container">
-          <p className="trusted-label">Trusted by leading businesses across India</p>
+          <p className="trusted-label">{siteConfig.trusted_label || "Trusted by leading businesses across India"}</p>
         </div>
         <div className="marquee-wrapper" ref={marqueeRef}>
           <div className="marquee-inner">
@@ -68,8 +70,22 @@ export default function HomePage() {
 
       <section className="how-it-works container" ref={addRef}>
         <div className="section-divider" />
-        <h2 className="section-title">How It <span className="gradient-text">Works</span></h2>
-        <p className="section-subtitle">Four simple steps to get your branded bottles</p>
+        <h2 className="section-title">
+          {siteConfig.how_it_works_title ? (
+            siteConfig.how_it_works_title.includes('[') && siteConfig.how_it_works_title.includes(']') ? (
+              <>
+                {siteConfig.how_it_works_title.split('[')[0]}
+                <span className="gradient-text">{siteConfig.how_it_works_title.split('[')[1].split(']')[0]}</span>
+                {siteConfig.how_it_works_title.split(']')[1]}
+              </>
+            ) : (
+              siteConfig.how_it_works_title
+            )
+          ) : (
+            <>How It <span className="gradient-text">Works</span></>
+          )}
+        </h2>
+        <p className="section-subtitle">{siteConfig.how_it_works_subtitle || "Four simple steps to get your branded bottles"}</p>
 
         <div className="steps-wrapper">
           <div className="timeline-line" ref={timelineRef} />
@@ -126,8 +142,22 @@ export default function HomePage() {
 
       <section className="why-vistaar container" ref={addRef}>
         <div className="section-divider" />
-        <h2 className="section-title">Why <span className="gradient-text">VistaarWater</span>?</h2>
-        <p className="section-subtitle">Everything you need for professional branded water bottles</p>
+        <h2 className="section-title">
+          {siteConfig.features_title ? (
+            siteConfig.features_title.includes('[') && siteConfig.features_title.includes(']') ? (
+              <>
+                {siteConfig.features_title.split('[')[0]}
+                <span className="gradient-text">{siteConfig.features_title.split('[')[1].split(']')[0]}</span>
+                {siteConfig.features_title.split(']')[1]}
+              </>
+            ) : (
+              siteConfig.features_title
+            )
+          ) : (
+            <>Why <span className="gradient-text">VistaarWater</span>?</>
+          )}
+        </h2>
+        <p className="section-subtitle">{siteConfig.features_subtitle || "Everything you need for professional branded water bottles"}</p>
 
         <div className="features-grid" ref={featuresGridRef}>
           {features.map((f, i) => (
@@ -145,8 +175,22 @@ export default function HomePage() {
       <section className="cta-section" ref={addRef}>
         <div className="container cta-content">
           <div className="cta-glow" />
-          <h2>Ready to <span className="gradient-text">Brand</span> Your Bottles?</h2>
-          <p>Join 500+ businesses who trust VistaarWater for their custom water bottles</p>
+          <h2>
+            {siteConfig.cta_title ? (
+              siteConfig.cta_title.includes('[') && siteConfig.cta_title.includes(']') ? (
+                <>
+                  {siteConfig.cta_title.split('[')[0]}
+                  <span className="gradient-text">{siteConfig.cta_title.split('[')[1].split(']')[0]}</span>
+                  {siteConfig.cta_title.split(']')[1]}
+                </>
+              ) : (
+                siteConfig.cta_title
+              )
+            ) : (
+              <>Ready to <span className="gradient-text">Brand</span> Your Bottles?</>
+            )}
+          </h2>
+          <p>{siteConfig.cta_subtitle || "Join 500+ businesses who trust VistaarWater for their custom water bottles"}</p>
           <a href="#" className="btn btn-primary btn-lg" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
             Start Designing Now {'>'}
           </a>

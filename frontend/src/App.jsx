@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -14,7 +15,11 @@ import AdminPage from './pages/AdminPage';
 import useStore from './store/useStore';
 
 function App() {
-  const { loading } = useStore();
+  const { loading, fetchSiteConfig } = useStore();
+
+  useEffect(() => {
+    fetchSiteConfig();
+  }, [fetchSiteConfig]);
 
   return (
     <HashRouter>

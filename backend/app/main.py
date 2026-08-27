@@ -30,13 +30,14 @@ except Exception as e:
     print(f"Warning: Could not mount /static: {e}")
 
 # Include routes
-from app.routes import auth, designs, orders, products, inquiries, admin
+from app.routes import auth, designs, orders, products, inquiries, admin, config
 app.include_router(auth.router)
 app.include_router(designs.router)
 app.include_router(orders.router)
 app.include_router(products.router)
 app.include_router(inquiries.router)
 app.include_router(admin.router)
+app.include_router(config.router)
 
 
 # ── Serve React frontend dist ──
@@ -166,7 +167,7 @@ async def startup_event():
 
     # Auto-seed default data
     try:
-        from app.models import Product, User
+        from app.models import Product, User, SiteConfig
         from app.auth import hash_password
         from app.database import SessionLocal
         db = SessionLocal()
@@ -202,6 +203,24 @@ async def startup_event():
                 role="user",
             ))
             print(f"Auto-seeded demo user: {demo_email}")
+
+        # Seed site configurations
+        if db.query(SiteConfig).count() == 0:
+            default_configs = {
+                "hero_title": "Design Your Branded Custom Water Bottles",
+                "hero_subtitle": "Elevate your brand with premium customized packaging. Instantly view interactive designs, place bulk orders with volume discounts, and get delivered across India.",
+                "hero_cta_text": "Start Designing Now",
+                "trusted_label": "Trusted by leading businesses across India",
+                "how_it_works_title": "How It Works",
+                "how_it_works_subtitle": "Four simple steps to get your branded bottles",
+                "features_title": "Why VistaarWater?",
+                "features_subtitle": "Everything you need for professional branded water bottles",
+                "cta_title": "Ready to Brand Your Bottles?",
+                "cta_subtitle": "Join 500+ businesses who trust VistaarWater for their custom water bottles",
+            }
+            for k, v in default_configs.items():
+                db.add(SiteConfig(key=k, value=v))
+            print("Auto-seeded default site configurations.")
 
         db.commit()
         db.close()

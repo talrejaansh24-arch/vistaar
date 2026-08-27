@@ -5,7 +5,7 @@ import { adminAPI, productAPI, resolveAssetUrl } from '../api/client';
 import './AdminPage.css';
 
 export default function AdminPage() {
-  const { user } = useStore();
+  const { user, siteConfig, updateSiteConfig } = useStore();
   const navigate = useNavigate();
   const [tab, setTab] = useState('dashboard');
   const [orders, setOrders] = useState([]);
@@ -28,6 +28,18 @@ export default function AdminPage() {
   const [templateFile, setTemplateFile] = useState(null);
   const [templateUploadLoading, setTemplateUploadLoading] = useState(false);
   const [templateError, setTemplateError] = useState('');
+
+  // Dynamic Site Config State
+  const [editConfigs, setEditConfigs] = useState({});
+  const [contentSuccess, setContentSuccess] = useState('');
+  const [contentError, setContentError] = useState('');
+  const [contentLoading, setContentLoading] = useState(false);
+
+  useEffect(() => {
+    if (siteConfig) {
+      setEditConfigs(siteConfig);
+    }
+  }, [siteConfig]);
 
   async function loadData() {
     try {
@@ -163,6 +175,22 @@ export default function AdminPage() {
     }
   };
 
+  // Save Dynamic Content Configurations
+  const handleContentSave = async (e) => {
+    e.preventDefault();
+    setContentSuccess('');
+    setContentError('');
+    setContentLoading(true);
+    try {
+      await updateSiteConfig(editConfigs);
+      setContentSuccess("Homepage contents updated successfully!");
+    } catch (err) {
+      setContentError(err.response?.data?.detail || "Failed to update configurations");
+    } finally {
+      setContentLoading(false);
+    }
+  };
+
   if (!user || user.role !== 'admin') return null;
 
   const statusOptions = ['pending', 'confirmed', 'production', 'shipped', 'delivered', 'cancelled'];
@@ -192,6 +220,7 @@ export default function AdminPage() {
         <button className={`tab-btn ${tab === 'orders' ? 'active' : ''}`} onClick={() => setTab('orders')}>📦 Orders ({orders.length})</button>
         <button className={`tab-btn ${tab === 'products' ? 'active' : ''}`} onClick={() => setTab('products')}>📋 Products</button>
         <button className={`tab-btn ${tab === 'templates' ? 'active' : ''}`} onClick={() => setTab('templates')}>🎨 Custom Templates ({templates.length})</button>
+        <button className={`tab-btn ${tab === 'content' ? 'active' : ''}`} onClick={() => setTab('content')}>✏️ Site Content</button>
         <button className={`tab-btn ${tab === 'inquiries' ? 'active' : ''}`} onClick={() => setTab('inquiries')}>📩 Inquiries ({inquiries.length})</button>
       </div>
 
@@ -538,6 +567,161 @@ export default function AdminPage() {
             {templates.length === 0 && <p className="empty-state">No custom templates uploaded yet</p>}
           </div>
 
+        </div>
+      )}
+
+      {/* Site Content Manager Tab */}
+      {tab === 'content' && (
+        <div className="glass" style={{ padding: '32px', borderRadius: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
+            <div>
+              <h3>✏️ Dynamic Homepage Content Manager</h3>
+              <p className="text-secondary" style={{ fontSize: '0.88rem' }}>Modify headlines, subtitles, and call-to-actions shown to visitors dynamically. Use brackets (e.g. `[highlighted]`) to render words in gradient.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleContentSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* HERO SECTION CONFIG */}
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+              <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>🚀 Hero Section Settings</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Hero Title</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="e.g. Design Your [Brand's] Perfect Water Bottle"
+                    value={editConfigs.hero_title || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, hero_title: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Hero CTA Button Text</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="e.g. Generate Designs"
+                    value={editConfigs.hero_cta_text || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, hero_cta_text: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '16px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Hero Subtitle</label>
+                <textarea 
+                  className="input" 
+                  rows="3"
+                  placeholder="Hero description paragraph text..."
+                  value={editConfigs.hero_subtitle || ''}
+                  onChange={(e) => setEditConfigs({ ...editConfigs, hero_subtitle: e.target.value })}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
+            {/* TRUSTED BANNER SECTION */}
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+              <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>🤝 Trusted Banner Settings</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Trusted Label Text</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="e.g. Trusted by leading businesses across India"
+                  value={editConfigs.trusted_label || ''}
+                  onChange={(e) => setEditConfigs({ ...editConfigs, trusted_label: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* HOW IT WORKS CONFIG */}
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+              <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>📈 "How It Works" Section</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Section Title</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="e.g. How It [Works]"
+                    value={editConfigs.how_it_works_title || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, how_it_works_title: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Section Subtitle</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="e.g. Four simple steps to get your branded bottles"
+                    value={editConfigs.how_it_works_subtitle || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, how_it_works_subtitle: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* WHY VISTAAR CONFIG */}
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+              <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>⭐ "Why VistaarWater?" Section</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Section Title</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="e.g. Why [VistaarWater]?"
+                    value={editConfigs.features_title || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, features_title: e.target.value })}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Section Subtitle</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    placeholder="e.g. Everything you need for professional branded water bottles"
+                    value={editConfigs.features_subtitle || ''}
+                    onChange={(e) => setEditConfigs({ ...editConfigs, features_subtitle: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* CALL TO ACTION CONFIG */}
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.01)', border: '1px solid var(--border)' }}>
+              <h4 style={{ color: 'var(--primary)', marginBottom: '16px', fontWeight: 'bold' }}>📢 Call-to-Action (Footer Banner) Section</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Banner Title</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="e.g. Ready to [Brand] Your Bottles?"
+                  value={editConfigs.cta_title || ''}
+                  onChange={(e) => setEditConfigs({ ...editConfigs, cta_title: e.target.value })}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '16px' }}>
+                <label style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>Banner Subtitle</label>
+                <textarea 
+                  className="input" 
+                  rows="2"
+                  placeholder="e.g. Join 500+ businesses who trust VistaarWater for their custom water bottles"
+                  value={editConfigs.cta_subtitle || ''}
+                  onChange={(e) => setEditConfigs({ ...editConfigs, cta_subtitle: e.target.value })}
+                  style={{ resize: 'vertical' }}
+                />
+              </div>
+            </div>
+
+            {contentError && <p className="text-danger">⚠️ {contentError}</p>}
+            {contentSuccess && <p className="text-success">✅ {contentSuccess}</p>}
+
+            <button type="submit" className="btn btn-primary" style={{ height: '48px', fontSize: '1rem', justifyContent: 'center' }} disabled={contentLoading}>
+              {contentLoading ? 'Saving Configurations...' : '💾 Save Content Changes'}
+            </button>
+          </form>
         </div>
       )}
 

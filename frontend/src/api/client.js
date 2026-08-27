@@ -84,4 +84,9 @@ export const adminAPI = {
   }),
 };
 
+export const configAPI = {
+  get: () => api.get('/api/config'),
+  update: (configs) => api.post('/api/config/admin', { configs }),
+};
+
 export default api;

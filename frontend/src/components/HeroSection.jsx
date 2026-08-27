@@ -8,7 +8,7 @@ import './HeroSection.css';
 
 export default function HeroSection() {
   const navigate = useNavigate();
-  const { setGeneratedDesigns, setDesignInput, setLoading, user, token } = useStore();
+  const { setGeneratedDesigns, setDesignInput, setLoading, user, token, siteConfig } = useStore();
   const heroRef = useRef(null);
   const sceneRef = useRef(null);
   const mainBottleRef = useRef(null);
@@ -150,10 +150,22 @@ export default function HeroSection() {
             India's #1 Custom Water Bottle Platform
           </div>
           <h1 className="hero-title">
-            Design Your <span className="gradient-text">Brand's</span> Perfect Water Bottle
+            {siteConfig.hero_title ? (
+              siteConfig.hero_title.includes('[') && siteConfig.hero_title.includes(']') ? (
+                <>
+                  {siteConfig.hero_title.split('[')[0]}
+                  <span className="gradient-text">{siteConfig.hero_title.split('[')[1].split(']')[0]}</span>
+                  {siteConfig.hero_title.split(']')[1]}
+                </>
+              ) : (
+                siteConfig.hero_title
+              )
+            ) : (
+              <>Design Your <span className="gradient-text">Brand's</span> Perfect Water Bottle</>
+            )}
           </h1>
           <p className="hero-subtitle">
-            Enter your business details. Get instant AI-generated label designs. Customize & order in bulk. It's that simple.
+            {siteConfig.hero_subtitle || "Enter your business details. Get instant AI-generated label designs. Customize & order in bulk. It's that simple."}
           </p>
 
           <form className="hero-input smart-input glass" onSubmit={handleGenerate}>
@@ -202,7 +214,7 @@ export default function HeroSection() {
               </div>
             </div>
             <button type="submit" className="btn btn-primary btn-lg generate-cta" ref={ctaRef}>
-              <span className="btn-sparkle">*</span> Generate Designs
+              <span className="btn-sparkle">*</span> {siteConfig.hero_cta_text || "Generate Designs"}
             </button>
           </form>
         </div>

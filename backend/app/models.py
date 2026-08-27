@@ -121,3 +121,11 @@ class OTP(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     expires_at = Column(DateTime, nullable=False)
     is_used = Column(Boolean, default=False)
+
+
+class SiteConfig(Base):
+    __tablename__ = "site_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String(100), unique=True, index=True, nullable=False)
+    value = Column(Text, nullable=True)

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { configAPI } from '../api/client';
 
 const safeJSONParse = (item, fallback) => {
   if (!item || item === 'undefined') return fallback;
@@ -50,6 +51,21 @@ const useStore = create((set, get) => ({
   clearCart: () => {
     localStorage.removeItem('vistaarwater_cart');
     set({ cart: [] });
+  },
+
+  // Site Configurations (Dynamic Homepage Content)
+  siteConfig: {},
+  fetchSiteConfig: async () => {
+    try {
+      const res = await configAPI.get();
+      set({ siteConfig: res.data });
+    } catch (e) {
+      console.error("Failed to fetch site configurations", e);
+    }
+  },
+  updateSiteConfig: async (configs) => {
+    await configAPI.update(configs);
+    set((state) => ({ siteConfig: { ...state.siteConfig, ...configs } }));
   },
 
   // Loading
