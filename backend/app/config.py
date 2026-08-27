@@ -42,7 +42,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
 # Static files
 STATIC_DIR = BASE_DIR / "static"
-TEMPLATES_DIR = BASE_DIR / "templates"
+TEMPLATES_DIR = STATIC_DIR / "templates"
 GENERATED_DIR = STATIC_DIR / "generated"
 UPLOADS_DIR = STATIC_DIR / "uploads"
 

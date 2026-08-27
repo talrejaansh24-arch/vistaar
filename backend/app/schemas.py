@@ -237,3 +237,31 @@ class DashboardMetricsResponse(BaseModel):
     revenue_yearly: float
     conversion_rate: float
     most_used_categories: List[dict]
+
+
+# ── Design Template Schemas ──
+class DesignTemplateResponse(BaseModel):
+    id: int
+    name: str
+    category: str
+    style: Optional[str]
+    file_path: str
+    colors: Optional[List[str]]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class DesignTemplateCreate(BaseModel):
+    name: str
+    category: str
+    style: Optional[str] = "modern"
+    file_path: str
+    colors: Optional[List[str]] = []
+
+
+# ── Admin Settings ──
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str

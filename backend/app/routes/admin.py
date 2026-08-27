@@ -1,14 +1,17 @@
 import datetime
-from fastapi import APIRouter, Depends, HTTPException
+import shutil
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, Order, Product, SavedDesign, Inquiry
+from app.models import User, Order, Product, SavedDesign, Inquiry, DesignTemplate
 from app.schemas import (
     OrderResponse, OrderStatusUpdate, ProductCreate, ProductUpdate,
     ProductResponse, InquiryResponse, SavedDesignResponse,
     UserResponse, UserStatusUpdate, DashboardMetricsResponse,
+    DesignTemplateResponse, DesignTemplateCreate, ChangePasswordRequest,
 )
-from app.auth import get_current_admin
+from app.auth import get_current_admin, verify_password, hash_password
+from app.config import TEMPLATES_DIR
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -221,3 +224,71 @@ def get_dashboard_metrics(
         conversion_rate=round(conversion_rate, 2),
         most_used_categories=most_used
     )
+
+
+# ── Settings & Password Change ──
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Change admin password."""
+    if not verify_password(data.old_password, admin.password_hash):
+        raise HTTPException(status_code=400, detail="Invalid current password")
+    
+    admin.password_hash = hash_password(data.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+
+# ── Custom Design Templates Management ──
+@router.get("/templates", response_model=list[DesignTemplateResponse])
+def list_templates(
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """List all design templates (admin only)."""
+    return db.query(DesignTemplate).order_by(DesignTemplate.created_at.desc()).all()
+
+
+@router.post("/templates", response_model=DesignTemplateResponse)
+def create_template(
+    data: DesignTemplateCreate,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Create a new custom design template (admin only)."""
+    template = DesignTemplate(**data.model_dump())
+    db.add(template)
+    db.commit()
+    db.refresh(template)
+    return template
+
+
+@router.delete("/templates/{template_id}")
+def delete_template(
+    template_id: int,
+    admin: User = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Delete a custom template (admin only)."""
+    template = db.query(DesignTemplate).filter(DesignTemplate.id == template_id).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    db.delete(template)
+    db.commit()
+    return {"message": "Template deleted successfully"}
+
+
+@router.post("/templates/upload")
+def upload_template_image(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_current_admin),
+):
+    """Upload a template image (admin only)."""
+    filename = f"custom_{int(datetime.datetime.utcnow().timestamp())}_{file.filename}"
+    file_path = TEMPLATES_DIR / filename
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    return {"file_path": f"/static/templates/{filename}"}

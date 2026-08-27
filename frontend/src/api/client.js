@@ -75,6 +75,13 @@ export const adminAPI = {
   getUsers: () => api.get('/api/admin/users'),
   updateUserStatus: (id, isSuspended) => api.patch(`/api/admin/users/${id}/status`, { is_suspended: isSuspended }),
   getMetrics: () => api.get('/api/admin/metrics'),
+  changePassword: (data) => api.post('/api/admin/change-password', data),
+  getTemplates: () => api.get('/api/admin/templates'),
+  createTemplate: (data) => api.post('/api/admin/templates', data),
+  deleteTemplate: (id) => api.delete(`/api/admin/templates/${id}`),
+  uploadTemplate: (formData) => api.post('/api/admin/templates/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export default api;

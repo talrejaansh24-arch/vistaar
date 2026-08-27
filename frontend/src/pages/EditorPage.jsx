@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Canvas, FabricImage, Rect, Textbox, Circle, Path, Polygon, Triangle } from 'fabric';
 import useStore from '../store/useStore';
-import { designAPI, resolveAssetUrl } from '../api/client';
+import { authAPI, designAPI, API_ORIGIN, resolveAssetUrl } from '../api/client';
 import { 
   RotateCcw, Undo2, Redo2, Trash2, Sliders, Layers, FlipHorizontal, Copy,
   LayoutTemplate, Type, Palette, UploadCloud, Square, Images, Video, QrCode, PlayCircle, Code, Share2, Save, Download, Printer
@@ -22,7 +22,7 @@ const ARTBOARD_HEIGHT = 340;
 
 export default function EditorPage() {
   const navigate = useNavigate();
-  const { currentDesign, generatedDesigns, setGeneratedDesigns, addToCart, setLoading } = useStore();
+  const { currentDesign, generatedDesigns, setGeneratedDesigns, addToCart, setLoading, designInput } = useStore();
   const canvasElRef = useRef(null);
   const fabricRef = useRef(null);
 
@@ -30,8 +30,8 @@ export default function EditorPage() {
   const [activeSize, setActiveSize] = useState('500ml');
   const [quantity, setQuantity] = useState(100);
   const [selectedObjectType, setSelectedObjectType] = useState('none');
-  const [textDraft, setTextDraft] = useState(() => currentDesign?.name || 'YOUR BRAND');
-  const [taglineDraft, setTaglineDraft] = useState('PREMIUM DRINKING WATER');
+  const [textDraft, setTextDraft] = useState(() => currentDesign?.business_name || designInput?.business_name || 'YOUR BRAND');
+  const [taglineDraft, setTaglineDraft] = useState(() => currentDesign?.bottle_text || designInput?.bottle_text || 'PREMIUM DRINKING WATER');
   const [fontSize, setFontSize] = useState(44);
   const [textColor, setTextColor] = useState(() => currentDesign?.colors?.[1] || '#55efc4');
   const [labelColor, setLabelColor] = useState(() => currentDesign?.colors?.[0] || '#0a3d2f');
@@ -135,6 +135,64 @@ export default function EditorPage() {
     canvas.add(labelBase);
 
     // 2. Draw Style-Specific Vectors
+    const isCustomTemplate = !palettes[style];
+    if (isCustomTemplate) {
+      labelBase.set({ fill: '#ffffff' });
+      
+      const title = new Textbox(brand.toUpperCase(), {
+        left: centerX,
+        top: centerY - 30,
+        width: 250,
+        fill: '#111111',
+        fontSize: 22,
+        fontWeight: 'bold',
+        fontFamily: 'Outfit, sans-serif',
+        textAlign: 'center',
+        selectable: true,
+        originX: 'center',
+        originY: 'center',
+        name: 'titleText'
+      });
+
+      const subtitle = new Textbox(tagline.toUpperCase(), {
+        left: centerX,
+        top: centerY + 30,
+        width: 250,
+        fill: '#555555',
+        fontSize: 12,
+        fontFamily: 'Inter, sans-serif',
+        textAlign: 'center',
+        selectable: true,
+        originX: 'center',
+        originY: 'center',
+        name: 'subtitleText'
+      });
+
+      canvas.add(title, subtitle);
+
+      const imgUrl = currentDesign?.preview_url || currentDesign?.file_path;
+      if (imgUrl) {
+        FabricImage.fromURL(resolveAssetUrl(imgUrl), { crossOrigin: 'anonymous' }).then((img) => {
+          img.set({
+            left: centerX,
+            top: centerY,
+            originX: 'center',
+            originY: 'center',
+            selectable: false,
+            evented: false,
+            name: 'templateBg'
+          });
+          img.scaleToWidth(ARTBOARD_WIDTH);
+          canvas.add(img);
+          img.sendToBack();
+          labelBase.sendToBack();
+          canvas.renderAll();
+          saveHistoryState();
+        }).catch(err => console.error("Error loading custom background image", err));
+      }
+      return;
+    }
+
     if (style === 'Brandex') {
       const zigzagL1 = new Path('M 10 10 L 50 50 L 10 90 L 50 130 L 10 170 L 50 210 L 10 250 L 50 290', {
         left: artLeft + 40,

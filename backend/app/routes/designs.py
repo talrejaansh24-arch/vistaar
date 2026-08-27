@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import User, SavedDesign
+from app.models import User, SavedDesign, DesignTemplate
 from app.schemas import (
     DesignGenerateRequest, DesignGenerateResponse, GeneratedDesign,
     SaveDesignRequest, SavedDesignResponse, AIDesignGenerateRequest,
@@ -19,8 +19,37 @@ router = APIRouter(prefix="/api/designs", tags=["designs"])
 
 
 @router.post("/generate", response_model=DesignGenerateResponse)
-def generate(data: DesignGenerateRequest):
+def generate(
+    data: DesignGenerateRequest,
+    db: Session = Depends(get_db),
+):
     """Generate design mockups based on user input. No auth required."""
+    # 1. Fetch custom uploaded templates from database
+    db_designs = []
+    try:
+        # Filter by style or category if provided
+        query = db.query(DesignTemplate)
+        if data.style:
+            query = query.filter(DesignTemplate.style == data.style.lower())
+        elif data.category:
+            query = query.filter(DesignTemplate.category == data.category.lower())
+        
+        db_templates = query.all()
+        for t in db_templates:
+            db_designs.append(GeneratedDesign(
+                id=f"db_{t.id}",
+                name=t.name,
+                preview_url=t.file_path,
+                style=t.style or "modern",
+                colors=t.colors or ["#ffffff", "#000000"],
+                template_id=t.id,
+                business_name=data.business_name,
+                bottle_text=data.bottle_text
+            ))
+    except Exception as e:
+        print(f"[Generate] Database templates load warning: {e}")
+
+    # 2. Generate procedural designs
     designs_data = generate_designs(
         business_name=data.business_name,
         bottle_text=data.bottle_text,
@@ -28,9 +57,11 @@ def generate(data: DesignGenerateRequest):
         bottle_size=data.bottle_size,
         style=data.style,
     )
+    procedural_designs = [GeneratedDesign(**d) for d in designs_data]
 
-    designs = [GeneratedDesign(**d) for d in designs_data]
-    return DesignGenerateResponse(designs=designs, count=len(designs))
+    # Combine: put database templates first, then fill up with procedural ones
+    all_combined = db_designs + procedural_designs
+    return DesignGenerateResponse(designs=all_combined, count=len(all_combined))
 
 
 @router.post("/generate-ai", response_model=DesignGenerateResponse)
