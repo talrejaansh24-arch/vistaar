@@ -683,7 +683,10 @@ def draw_custom_uploaded_bg(draw, width, height, business_name, tagline, bg_path
         
         # Paste bg onto the main canvas
         base_img = draw._image
-        base_img.paste(bg, (0, 0))
+        try:
+            base_img.paste(bg, (0, 0), bg)
+        except Exception:
+            base_img.paste(bg, (0, 0))
         
         # Apply the chosen overlay format
         if overlay_type == "luxury":
@@ -778,8 +781,8 @@ def generate_designs(
         filename = f"design_{design_id}.png"
         filepath = GENERATED_DIR / filename
         
-        # Create pillow image
-        img = Image.new("RGB", (width, height), (255, 255, 255))
+        # Create pillow image as RGBA so alpha_composite works
+        img = Image.new("RGBA", (width, height), (255, 255, 255, 255))
         draw = ImageDraw.Draw(img)
         
         drawn_business_name = business_name or "VISTAARWATER"
@@ -787,7 +790,10 @@ def generate_designs(
         
         # Call drawing logic
         meta["draw"](draw, width, height, drawn_business_name, drawn_bottle_text)
-        img.save(str(filepath), "PNG", quality=95)
+        
+        # Convert back to RGB for safety before saving (optional, but good for some viewers)
+        final_img = img.convert("RGB")
+        final_img.save(str(filepath), "PNG")
         
         # Make a custom name variation if it's a second loop
         style_name = meta["name"]
