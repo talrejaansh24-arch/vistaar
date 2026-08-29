@@ -136,8 +136,72 @@ export default function DesignResultsPage() {
           </div>
         )}
 
+        {/* NEW: Dynamic Filters Section */}
+        <div className="filters-section glass" style={{ padding: '20px', borderRadius: '12px', marginBottom: '30px', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '200px' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Category Filter</label>
+            <select 
+              className="input" 
+              value={designInput?.category || 'hotel'} 
+              onChange={async (e) => {
+                const newCat = e.target.value;
+                setFetchingDesigns(true);
+                try {
+                  const payload = { ...designInput, category: newCat };
+                  const res = await designAPI.generate(payload);
+                  setGeneratedDesigns(res.data.designs);
+                  setDesignInput(payload);
+                  if (res.data.designs.length > 0) setSelectedDesignId(res.data.designs[0].id);
+                } catch(err) { console.error(err); }
+                finally { setFetchingDesigns(false); }
+              }}
+            >
+              <option value="hotel">Hotel</option>
+              <option value="restaurant">Restaurant</option>
+              <option value="cafe">Cafe</option>
+              <option value="event">Event</option>
+              <option value="gym">Gym / Fitness</option>
+              <option value="corporate">Corporate</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '200px' }}>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Style Filter</label>
+            <select 
+              className="input" 
+              value={designInput?.style || 'modern'} 
+              onChange={async (e) => {
+                const newStyle = e.target.value;
+                setFetchingDesigns(true);
+                try {
+                  const payload = { ...designInput, style: newStyle };
+                  const res = await designAPI.generate(payload);
+                  setGeneratedDesigns(res.data.designs);
+                  setDesignInput(payload);
+                  if (res.data.designs.length > 0) setSelectedDesignId(res.data.designs[0].id);
+                } catch(err) { console.error(err); }
+                finally { setFetchingDesigns(false); }
+              }}
+            >
+              <option value="modern">Modern</option>
+              <option value="luxury">Luxury</option>
+              <option value="classic">Classic</option>
+              <option value="minimal">Minimal</option>
+              <option value="eco">Eco-Friendly</option>
+            </select>
+          </div>
+        </div>
+
         {/* Template Grid */}
-        <DesignGrid designs={generatedDesigns} />
+        {generatedDesigns.length > 0 ? (
+          <DesignGrid designs={generatedDesigns} />
+        ) : (
+          <div className="empty-state glass" style={{ textAlign: 'center', padding: '48px 24px', marginBottom: '30px' }}>
+            <h3>No Designs Found</h3>
+            <p style={{ color: 'var(--text-muted)' }}>We couldn't find any designs for this specific category and style combination.</p>
+          </div>
+        )}
 
         {/* NEW: Dedicated Quick Order / Add to Cart Section */}
         <section className="quick-order-section">
