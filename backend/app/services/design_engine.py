@@ -737,44 +737,55 @@ def generate_designs(
                 "style_groups": ["modern", "luxury", "minimal", "classic", "eco", "premium", "bold"] # Matches any style filter
             })
     else:
-        # The default procedural designs
+        # The default procedural designs, now intelligently mapped to relevant categories!
         styles_meta = [
-            {"name": "Brandex Geometric", "style": "Brandex", "colors": ["#00a8ff", "#ffffff", "#00a8ff"], "draw": draw_brandex_style, "style_groups": ["modern"]},
-            {"name": "Forever Wave", "style": "Forever", "colors": ["#0096f2", "#ffffff", "#2d3436"], "draw": draw_forever_style, "style_groups": ["modern", "classic"]},
-            {"name": "WaveUp Dynamic", "style": "WaveUp", "colors": ["#ebf0f5", "#0b1e50", "#00a8ff"], "draw": draw_waveup_style, "style_groups": ["modern", "eco"]},
-            {"name": "Fiji Stripes", "style": "Fiji", "colors": ["#ffffff", "#e60028", "#009650"], "draw": draw_fiji_style, "style_groups": ["classic", "modern"]},
-            {"name": "Myst Droplets", "style": "Myst", "colors": ["#ffffff", "#009650", "#0a1d50"], "draw": draw_myst_style, "style_groups": ["minimal", "eco"]},
-            {"name": "Pure Artesian", "style": "Pure", "colors": ["#1a1a1a", "#ffffff", "#888888"], "draw": draw_pure_style, "style_groups": ["luxury", "minimal"]},
-            {"name": "Reva Bubble", "style": "Reva", "colors": ["#1e2022", "#a3e635", "#ffffff"], "draw": draw_reva_style, "style_groups": ["minimal", "luxury"]},
-            {"name": "OpenLate Night", "style": "OpenLate", "colors": ["#000000", "#ffffff", "#ffffff"], "draw": draw_openlate_style, "style_groups": ["luxury"]},
-            {"name": "OneBurger Clean", "style": "OneBurger", "colors": ["#ffffff", "#000000", "#000000"], "draw": draw_oneburger_style, "style_groups": ["minimal", "classic"]},
-            {"name": "Mountain Alpine", "style": "Mountain", "colors": ["#dff9fb", "#130cb7", "#52c234"], "draw": draw_mountain_style, "style_groups": ["eco", "classic"]},
-            {"name": "Vivia Cursive", "style": "Vivia", "colors": ["#e60028", "#ffffff", "#009688"], "draw": draw_vivia_style, "style_groups": ["luxury", "modern"]},
-            {"name": "Melt Water", "style": "Melt", "colors": ["#191c1e", "#ffffff", "#e60028"], "draw": draw_melt_style, "style_groups": ["luxury"]},
-            {"name": "LifeWtr Mountain", "style": "LifeWtrArt1", "colors": ["#ffffff", "#000000", "#ff6b6b"], "draw": draw_lifewtrart1_style, "style_groups": ["modern", "luxury"]},
-            {"name": "LifeWtr Doodle", "style": "LifeWtrArt2", "colors": ["#f5f6fa", "#000000", "#ff6b6b"], "draw": draw_lifewtrart2_style, "style_groups": ["classic"]},
-            {"name": "LifeWtr Diamond", "style": "LifeWtrArt3", "colors": ["#ffffff", "#000000", "#ff007f"], "draw": draw_lifewtrart3_style, "style_groups": ["classic"]},
+            {"name": "Brandex Geometric", "style": "Brandex", "colors": ["#00a8ff", "#ffffff", "#00a8ff"], "draw": draw_brandex_style, "style_groups": ["modern"], "categories": ["corporate", "event", "general"]},
+            {"name": "Forever Wave", "style": "Forever", "colors": ["#0096f2", "#ffffff", "#2d3436"], "draw": draw_forever_style, "style_groups": ["modern", "classic"], "categories": ["hotel", "restaurant", "cafe", "general"]},
+            {"name": "WaveUp Dynamic", "style": "WaveUp", "colors": ["#ebf0f5", "#0b1e50", "#00a8ff"], "draw": draw_waveup_style, "style_groups": ["modern", "eco"], "categories": ["gym", "event", "general"]},
+            {"name": "Fiji Stripes", "style": "Fiji", "colors": ["#ffffff", "#e60028", "#009650"], "draw": draw_fiji_style, "style_groups": ["classic", "modern"], "categories": ["restaurant", "cafe", "general"]},
+            {"name": "Myst Droplets", "style": "Myst", "colors": ["#ffffff", "#009650", "#0a1d50"], "draw": draw_myst_style, "style_groups": ["minimal", "eco"], "categories": ["gym", "cafe", "general"]},
+            {"name": "Pure Artesian", "style": "Pure", "colors": ["#1a1a1a", "#ffffff", "#888888"], "draw": draw_pure_style, "style_groups": ["luxury", "minimal"], "categories": ["hotel", "corporate", "general"]},
+            {"name": "Reva Bubble", "style": "Reva", "colors": ["#1e2022", "#a3e635", "#ffffff"], "draw": draw_reva_style, "style_groups": ["minimal", "luxury"], "categories": ["gym", "corporate", "hotel", "general"]},
+            {"name": "OpenLate Night", "style": "OpenLate", "colors": ["#000000", "#ffffff", "#ffffff"], "draw": draw_openlate_style, "style_groups": ["luxury", "modern"], "categories": ["restaurant", "event", "cafe"]},
+            {"name": "OneBurger Clean", "style": "OneBurger", "colors": ["#ffffff", "#000000", "#000000"], "draw": draw_oneburger_style, "style_groups": ["minimal", "classic"], "categories": ["restaurant", "event", "cafe"]},
+            {"name": "Mountain Alpine", "style": "Mountain", "colors": ["#dff9fb", "#130cb7", "#52c234"], "draw": draw_mountain_style, "style_groups": ["eco", "classic"], "categories": ["hotel", "corporate", "gym", "general"]},
+            {"name": "Vivia Cursive", "style": "Vivia", "colors": ["#e60028", "#ffffff", "#009688"], "draw": draw_vivia_style, "style_groups": ["luxury", "modern"], "categories": ["restaurant", "hotel", "general"]},
+            {"name": "Melt Water", "style": "Melt", "colors": ["#191c1e", "#ffffff", "#e60028"], "draw": draw_melt_style, "style_groups": ["luxury"], "categories": ["gym", "event", "hotel", "general"]},
+            {"name": "LifeWtr Mountain", "style": "LifeWtrArt1", "colors": ["#ffffff", "#000000", "#ff6b6b"], "draw": draw_lifewtrart1_style, "style_groups": ["modern", "luxury"], "categories": ["corporate", "event", "general"]},
+            {"name": "LifeWtr Doodle", "style": "LifeWtrArt2", "colors": ["#f5f6fa", "#000000", "#ff6b6b"], "draw": draw_lifewtrart2_style, "style_groups": ["classic"], "categories": ["cafe", "event", "restaurant"]},
+            {"name": "LifeWtr Diamond", "style": "LifeWtrArt3", "colors": ["#ffffff", "#000000", "#ff007f"], "draw": draw_lifewtrart3_style, "style_groups": ["classic"], "categories": ["hotel", "corporate", "event"]},
         ]
+        
+        # STRICT FILTERING based on selected category
+        if category and category.lower() != "general":
+            cat_clean = category.lower().strip()
+            cat_matching = [m for m in styles_meta if cat_clean in m.get("categories", [])]
+            if cat_matching:
+                styles_meta = cat_matching
 
     designs = []
     
-    # Filter/reorder based on selected style and force_template
+    # STRICT FILTERING based on selected style and force_template
     if force_template:
         matching = [m for m in styles_meta if m["style"].lower() == force_template.lower()]
         if matching:
             styles_meta = matching
-    elif style:
+    elif style and style.lower() != "all":
         style_clean = style.lower().strip()
         matching = [m for m in styles_meta if style_clean in m.get("style_groups", [])]
         if matching:
-            non_matching = [m for m in styles_meta if m not in matching]
-            # Prioritize matching styles, then append the rest as secondary choices
-            styles_meta = matching + non_matching
+            styles_meta = matching # Strict filtering! No unrelated styles padded!
             
     num_to_generate = min(max(count, len(styles_meta)), 15)
-    if force_template and matching:
+    if force_template and styles_meta:
         num_to_generate = count
-
+    
+    # If strict filtering left us with a small list, limit generation so we don't repeat infinitely
+    if len(styles_meta) < 4:
+        num_to_generate = len(styles_meta) * 2 # generate 1 var of each to pad slightly, but don't overwhelm
+    if len(styles_meta) >= 4 and len(styles_meta) < 8:
+        num_to_generate = len(styles_meta)
+        
     for i in range(num_to_generate):
         meta = styles_meta[i % len(styles_meta)]
         design_id = str(uuid.uuid4())[:8]
