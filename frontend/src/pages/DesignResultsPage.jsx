@@ -29,7 +29,7 @@ export default function DesignResultsPage() {
           const res = await designAPI.generate({
             business_name: user?.business_name || 'YOUR BRAND',
             bottle_text: 'Pure Himalayan',
-            category: 'general',
+            category: 'hotel',
             bottle_size: '500ml',
             style: 'modern'
           });
@@ -37,7 +37,7 @@ export default function DesignResultsPage() {
           setDesignInput({
             business_name: user?.business_name || 'YOUR BRAND',
             bottle_text: 'Pure Himalayan',
-            category: 'general',
+            category: 'hotel',
             bottle_size: '500ml',
             style: 'modern'
           });

@@ -20,7 +20,7 @@ export default function HeroSection() {
   const statsRef = useRef(null);
 
   const [form, setForm] = useState({
-    business_name: '', bottle_text: '', category: 'hotel', bottle_size: '500ml', style: 'modern',
+    business_name: 'YOUR BRAND', bottle_text: '', category: 'hotel', bottle_size: '500ml', style: 'modern',
   });
 
   //  Cinematic GSAP Timeline 

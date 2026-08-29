@@ -8,7 +8,7 @@ export default function DesignGrid({ designs = [] }) {
   const [showAll, setShowAll] = useState(false);
 
   const safeDesigns = Array.isArray(designs) ? designs : [];
-  const visibleDesigns = showAll ? safeDesigns : safeDesigns.slice(0, 3);
+  const visibleDesigns = safeDesigns;
 
   useEffect(() => {
     if (gridRef.current && visibleDesigns.length > 0) {
@@ -27,17 +27,6 @@ export default function DesignGrid({ designs = [] }) {
       <div className="design-grid" ref={gridRef}>
         {visibleDesigns.map((d) => <DesignCard key={d.id} design={d} />)}
       </div>
-      {designs.length > 3 && (
-        <div style={{ textAlign: 'center', marginTop: '30px' }}>
-          <button 
-            className="btn btn-primary" 
-            onClick={() => setShowAll(!showAll)}
-            style={{ minWidth: '180px' }}
-          >
-            {showAll ? 'Show Less' : 'View More Designs'}
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -61,6 +61,30 @@ def generate(
 
     # Combine: put database templates first, then fill up with procedural ones
     all_combined = db_designs + procedural_designs
+    
+    # Custom Override for Category Uploads
+    if data.category:
+        from app.config import STATIC_DIR
+        cat_dir = STATIC_DIR / "uploads" / data.category.lower()
+        if cat_dir.exists():
+            cat_designs = []
+            # Gather all png/jpg images in this category folder
+            img_files = list(cat_dir.glob("*.png")) + list(cat_dir.glob("*.jpg")) + list(cat_dir.glob("*.jpeg"))
+            if img_files:
+                for i, img_path in enumerate(img_files, 1):
+                    cat_designs.append(GeneratedDesign(
+                        id=f"{data.category.lower()}_custom_{i}",
+                        name=f"{data.category.capitalize()} Collection {i}",
+                        preview_url=f"/static/uploads/{data.category.lower()}/{img_path.name}",
+                        style="luxury",
+                        colors=["#000000", "#ffffff"],
+                        template_id=None,
+                        business_name=data.business_name,
+                        bottle_text=data.bottle_text
+                    ))
+                # Return only the custom category designs as requested
+                all_combined = cat_designs
+
     return DesignGenerateResponse(designs=all_combined, count=len(all_combined))
 
 
