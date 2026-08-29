@@ -679,7 +679,7 @@ def draw_custom_uploaded_bg(draw, width, height, business_name, tagline, bg_path
             top = (bg.height - new_h) // 2
             bg = bg.crop((0, top, bg.width, top + new_h))
             
-        bg = bg.resize((width, height), Image.LANCZOS)
+        bg = bg.resize((width, height)) # Removed Image.LANCZOS for Pillow 10+ compatibility
         
         # Paste bg onto the main canvas
         base_img = draw._image
@@ -698,9 +698,9 @@ def draw_custom_uploaded_bg(draw, width, height, business_name, tagline, bg_path
             
     except Exception as e:
         print(f"Error processing custom uploaded image {bg_path}: {e}")
-        # Fallback
+        # Fallback with error info
         draw.rectangle([(0, 0), (width, height)], fill=(50, 50, 50))
-        draw.text((width//2, height//2), "IMAGE ERROR", fill=(255,0,0))
+        draw.text((width//2, height//2), f"ERROR: {str(e)}", fill=(255,100,100), anchor="mm")
 
 
 def generate_designs(
