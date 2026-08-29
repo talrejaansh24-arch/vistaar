@@ -29,10 +29,10 @@ def generate(
     try:
         # Filter by style or category if provided
         query = db.query(DesignTemplate)
+        if data.category:
+            query = query.filter(DesignTemplate.category == data.category.lower())
         if data.style:
             query = query.filter(DesignTemplate.style == data.style.lower())
-        elif data.category:
-            query = query.filter(DesignTemplate.category == data.category.lower())
         
         db_templates = query.all()
         for t in db_templates:
