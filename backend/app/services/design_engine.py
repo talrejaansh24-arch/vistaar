@@ -72,11 +72,11 @@ LAYOUTS = [
     {"name": "Split", "name_y_ratio": 0.25, "text_y_ratio": 0.70, "align": "center"},
 ]
 
-# Label dimensions based on bottle size
+# Label dimensions based on bottle size (High Resolution)
 LABEL_SIZES = {
-    "250ml": (400, 250),
-    "500ml": (500, 300),
-    "1000ml": (600, 350),
+    "250ml": (800, 500),
+    "500ml": (1000, 600),
+    "1000ml": (1200, 700),
 }
 
 
@@ -84,17 +84,17 @@ def get_fonts():
     """Helper to load standard sans-serif system fonts with fallbacks."""
     try:
         # Standard system font on Windows/Linux/macOS
-        font_name = ImageFont.truetype("arial.ttf", 13)
-        font_title = ImageFont.truetype("arial.ttf", 22)
-        font_huge = ImageFont.truetype("arial.ttf", 46)
-        font_small = ImageFont.truetype("arial.ttf", 15)
+        font_name = ImageFont.truetype("arial.ttf", 26)
+        font_title = ImageFont.truetype("arial.ttf", 44)
+        font_huge = ImageFont.truetype("arial.ttf", 92)
+        font_small = ImageFont.truetype("arial.ttf", 30)
     except Exception:
         try:
             # Fallback to standard times or others if arial is missing
-            font_name = ImageFont.truetype("times.ttf", 13)
-            font_title = ImageFont.truetype("times.ttf", 22)
-            font_huge = ImageFont.truetype("times.ttf", 46)
-            font_small = ImageFont.truetype("times.ttf", 15)
+            font_name = ImageFont.truetype("times.ttf", 26)
+            font_title = ImageFont.truetype("times.ttf", 44)
+            font_huge = ImageFont.truetype("times.ttf", 92)
+            font_small = ImageFont.truetype("times.ttf", 30)
         except Exception:
             font_name = ImageFont.load_default()
             font_title = ImageFont.load_default()
