@@ -595,6 +595,111 @@ def draw_lifewtrart3_style(draw, width, height, business_name, tagline):
     draw.text((width // 2, by1 + 70), p2[:6], fill=(255, 255, 255), font=font_title, anchor="mm")
 
 
+def draw_overlay_luxury(base_img, width, height, business_name, tagline):
+    """Draw a luxury gold/dark overlay over the base image."""
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    overlay_draw = ImageDraw.Draw(overlay)
+    
+    # Dark semi-transparent full overlay to make text pop
+    overlay_draw.rectangle([0, 0, width, height], fill=(0, 0, 0, 120))
+    # Elegant gold border
+    border_margin = 20
+    overlay_draw.rectangle([border_margin, border_margin, width - border_margin, height - border_margin], outline=(212, 175, 55, 200), width=2)
+    overlay_draw.rectangle([border_margin+5, border_margin+5, width - border_margin-5, height - border_margin-5], outline=(212, 175, 55, 80), width=1)
+    
+    base_img.alpha_composite(overlay)
+    draw = ImageDraw.Draw(base_img)
+    font_name, font_title, font_huge, font_small = get_fonts()
+    
+    brand = (business_name or "LUXURY").upper()
+    draw.text((width // 2, height // 2 - 20), brand, fill=(255, 255, 255), font=font_title, anchor="mm")
+    
+    tag = tagline if tagline else "Premium Collection"
+    draw.text((width // 2, height // 2 + 25), tag.upper(), fill=(212, 175, 55), font=font_name, anchor="mm")
+
+
+def draw_overlay_minimal(base_img, width, height, business_name, tagline):
+    """Draw a clean, minimal white block overlay."""
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    overlay_draw = ImageDraw.Draw(overlay)
+    
+    # Solid white block in the middle third
+    block_h = 120
+    overlay_draw.rectangle([0, height//2 - block_h//2, width, height//2 + block_h//2], fill=(255, 255, 255, 240))
+    
+    base_img.alpha_composite(overlay)
+    draw = ImageDraw.Draw(base_img)
+    font_name, font_title, font_huge, font_small = get_fonts()
+    
+    brand = (business_name or "MINIMAL").upper()
+    draw.text((width // 2, height // 2 - 15), brand, fill=(30, 30, 30), font=font_huge, anchor="mm")
+    
+    tag = tagline if tagline else "Pure & Natural"
+    draw.text((width // 2, height // 2 + 30), tag, fill=(100, 100, 100), font=font_name, anchor="mm")
+
+
+def draw_overlay_modern(base_img, width, height, business_name, tagline):
+    """Draw a modern, vibrant geometric overlay."""
+    overlay = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    overlay_draw = ImageDraw.Draw(overlay)
+    
+    # Vertical side strip
+    overlay_draw.rectangle([0, 0, 80, height], fill=(0, 168, 255, 220))
+    # Subtle gradient/fade representation (solid transparent block for now)
+    overlay_draw.rectangle([80, 0, width, height], fill=(0, 0, 0, 80))
+    
+    base_img.alpha_composite(overlay)
+    draw = ImageDraw.Draw(base_img)
+    font_name, font_title, font_huge, font_small = get_fonts()
+    
+    # Vertical text on the strip
+    brand = (business_name or "MODERN").upper()
+    y_start = height * 0.1
+    for i, char in enumerate(brand[:10]):
+        draw.text((40, int(y_start + i * 24)), char, fill=(255, 255, 255), font=font_title, anchor="mm")
+        
+    tag = tagline if tagline else "Fresh Spring Water"
+    draw.text((100, height - 30), tag.upper(), fill=(255, 255, 255), font=font_name, anchor="lm")
+
+
+def draw_custom_uploaded_bg(draw, width, height, business_name, tagline, bg_path, overlay_type):
+    """Loads an uploaded background image and applies a typographic overlay."""
+    try:
+        bg = Image.open(bg_path).convert("RGBA")
+        
+        # Cover crop
+        bg_ratio = bg.width / bg.height
+        target_ratio = width / height
+        if bg_ratio > target_ratio:
+            new_w = int(bg.height * target_ratio)
+            left = (bg.width - new_w) // 2
+            bg = bg.crop((left, 0, left + new_w, bg.height))
+        else:
+            new_h = int(bg.width / target_ratio)
+            top = (bg.height - new_h) // 2
+            bg = bg.crop((0, top, bg.width, top + new_h))
+            
+        bg = bg.resize((width, height), Image.LANCZOS)
+        
+        # Paste bg onto the main canvas
+        base_img = draw._image
+        base_img.paste(bg, (0, 0))
+        
+        # Apply the chosen overlay format
+        if overlay_type == "luxury":
+            draw_overlay_luxury(base_img, width, height, business_name, tagline)
+        elif overlay_type == "minimal":
+            draw_overlay_minimal(base_img, width, height, business_name, tagline)
+        else:
+            draw_overlay_modern(base_img, width, height, business_name, tagline)
+            
+    except Exception as e:
+        print(f"Error processing custom uploaded image {bg_path}: {e}")
+        # Fallback
+        draw.rectangle([(0, 0), (width, height)], fill=(50, 50, 50))
+        draw.text((width//2, height//2), "IMAGE ERROR", fill=(255,0,0))
+
+
 def generate_designs(
     business_name: str,
     bottle_text: str = "",
@@ -602,30 +707,51 @@ def generate_designs(
     bottle_size: str = "500ml",
     style: str = "modern",
     count: int = 8,
-    force_template: str = None
+    force_template: str = None,
+    uploaded_images: list = None
 ) -> list:
     """Generate multiple brand-inspired design variations and save them to the static assets folder."""
     label_size = LABEL_SIZES.get(bottle_size, LABEL_SIZES["500ml"])
     width, height = label_size
 
-    # The custom designs we generate with style group tags
-    styles_meta = [
-        {"name": "Brandex Geometric", "style": "Brandex", "colors": ["#00a8ff", "#ffffff", "#00a8ff"], "draw": draw_brandex_style, "style_groups": ["modern"]},
-        {"name": "Forever Wave", "style": "Forever", "colors": ["#0096f2", "#ffffff", "#2d3436"], "draw": draw_forever_style, "style_groups": ["modern", "classic"]},
-        {"name": "WaveUp Dynamic", "style": "WaveUp", "colors": ["#ebf0f5", "#0b1e50", "#00a8ff"], "draw": draw_waveup_style, "style_groups": ["modern", "eco"]},
-        {"name": "Fiji Stripes", "style": "Fiji", "colors": ["#ffffff", "#e60028", "#009650"], "draw": draw_fiji_style, "style_groups": ["classic", "modern"]},
-        {"name": "Myst Droplets", "style": "Myst", "colors": ["#ffffff", "#009650", "#0a1d50"], "draw": draw_myst_style, "style_groups": ["minimal", "eco"]},
-        {"name": "Pure Artesian", "style": "Pure", "colors": ["#1a1a1a", "#ffffff", "#888888"], "draw": draw_pure_style, "style_groups": ["luxury", "minimal"]},
-        {"name": "Reva Bubble", "style": "Reva", "colors": ["#1e2022", "#a3e635", "#ffffff"], "draw": draw_reva_style, "style_groups": ["minimal", "luxury"]},
-        {"name": "OpenLate Night", "style": "OpenLate", "colors": ["#000000", "#ffffff", "#ffffff"], "draw": draw_openlate_style, "style_groups": ["luxury"]},
-        {"name": "OneBurger Clean", "style": "OneBurger", "colors": ["#ffffff", "#000000", "#000000"], "draw": draw_oneburger_style, "style_groups": ["minimal", "classic"]},
-        {"name": "Mountain Alpine", "style": "Mountain", "colors": ["#dff9fb", "#130cb7", "#52c234"], "draw": draw_mountain_style, "style_groups": ["eco", "classic"]},
-        {"name": "Vivia Cursive", "style": "Vivia", "colors": ["#e60028", "#ffffff", "#009688"], "draw": draw_vivia_style, "style_groups": ["luxury", "modern"]},
-        {"name": "Melt Water", "style": "Melt", "colors": ["#191c1e", "#ffffff", "#e60028"], "draw": draw_melt_style, "style_groups": ["luxury"]},
-        {"name": "LifeWtr Mountain", "style": "LifeWtrArt1", "colors": ["#ffffff", "#000000", "#ff6b6b"], "draw": draw_lifewtrart1_style, "style_groups": ["modern", "luxury"]},
-        {"name": "LifeWtr Doodle", "style": "LifeWtrArt2", "colors": ["#f5f6fa", "#000000", "#ff6b6b"], "draw": draw_lifewtrart2_style, "style_groups": ["classic"]},
-        {"name": "LifeWtr Diamond", "style": "LifeWtrArt3", "colors": ["#ffffff", "#000000", "#ff007f"], "draw": draw_lifewtrart3_style, "style_groups": ["classic"]},
-    ]
+    styles_meta = []
+    
+    if uploaded_images and len(uploaded_images) > 0:
+        # Dynamically build styles using the uploaded images as backgrounds!
+        overlay_types = ["luxury", "minimal", "modern"]
+        for idx, img_path in enumerate(uploaded_images):
+            overlay_choice = overlay_types[idx % len(overlay_types)]
+            
+            # Create a lambda or partial to pass the img_path and overlay_type
+            def make_draw_func(path, overlay):
+                return lambda draw, w, h, b_name, b_text: draw_custom_uploaded_bg(draw, w, h, b_name, b_text, path, overlay)
+                
+            styles_meta.append({
+                "name": f"Custom {category.capitalize()} {idx+1}",
+                "style": f"Uploaded_{idx}",
+                "colors": ["#ffffff", "#000000", "#555555"],
+                "draw": make_draw_func(img_path, overlay_choice),
+                "style_groups": ["modern", "luxury", "minimal", "classic", "eco", "premium", "bold"] # Matches any style filter
+            })
+    else:
+        # The default procedural designs
+        styles_meta = [
+            {"name": "Brandex Geometric", "style": "Brandex", "colors": ["#00a8ff", "#ffffff", "#00a8ff"], "draw": draw_brandex_style, "style_groups": ["modern"]},
+            {"name": "Forever Wave", "style": "Forever", "colors": ["#0096f2", "#ffffff", "#2d3436"], "draw": draw_forever_style, "style_groups": ["modern", "classic"]},
+            {"name": "WaveUp Dynamic", "style": "WaveUp", "colors": ["#ebf0f5", "#0b1e50", "#00a8ff"], "draw": draw_waveup_style, "style_groups": ["modern", "eco"]},
+            {"name": "Fiji Stripes", "style": "Fiji", "colors": ["#ffffff", "#e60028", "#009650"], "draw": draw_fiji_style, "style_groups": ["classic", "modern"]},
+            {"name": "Myst Droplets", "style": "Myst", "colors": ["#ffffff", "#009650", "#0a1d50"], "draw": draw_myst_style, "style_groups": ["minimal", "eco"]},
+            {"name": "Pure Artesian", "style": "Pure", "colors": ["#1a1a1a", "#ffffff", "#888888"], "draw": draw_pure_style, "style_groups": ["luxury", "minimal"]},
+            {"name": "Reva Bubble", "style": "Reva", "colors": ["#1e2022", "#a3e635", "#ffffff"], "draw": draw_reva_style, "style_groups": ["minimal", "luxury"]},
+            {"name": "OpenLate Night", "style": "OpenLate", "colors": ["#000000", "#ffffff", "#ffffff"], "draw": draw_openlate_style, "style_groups": ["luxury"]},
+            {"name": "OneBurger Clean", "style": "OneBurger", "colors": ["#ffffff", "#000000", "#000000"], "draw": draw_oneburger_style, "style_groups": ["minimal", "classic"]},
+            {"name": "Mountain Alpine", "style": "Mountain", "colors": ["#dff9fb", "#130cb7", "#52c234"], "draw": draw_mountain_style, "style_groups": ["eco", "classic"]},
+            {"name": "Vivia Cursive", "style": "Vivia", "colors": ["#e60028", "#ffffff", "#009688"], "draw": draw_vivia_style, "style_groups": ["luxury", "modern"]},
+            {"name": "Melt Water", "style": "Melt", "colors": ["#191c1e", "#ffffff", "#e60028"], "draw": draw_melt_style, "style_groups": ["luxury"]},
+            {"name": "LifeWtr Mountain", "style": "LifeWtrArt1", "colors": ["#ffffff", "#000000", "#ff6b6b"], "draw": draw_lifewtrart1_style, "style_groups": ["modern", "luxury"]},
+            {"name": "LifeWtr Doodle", "style": "LifeWtrArt2", "colors": ["#f5f6fa", "#000000", "#ff6b6b"], "draw": draw_lifewtrart2_style, "style_groups": ["classic"]},
+            {"name": "LifeWtr Diamond", "style": "LifeWtrArt3", "colors": ["#ffffff", "#000000", "#ff007f"], "draw": draw_lifewtrart3_style, "style_groups": ["classic"]},
+        ]
 
     designs = []
     

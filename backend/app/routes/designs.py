@@ -49,54 +49,28 @@ def generate(
     except Exception as e:
         print(f"[Generate] Database templates load warning: {e}")
 
-    # 2. Generate procedural designs
+    # Custom Override for Category Uploads (Fetch them to use as dynamic backgrounds)
+    uploaded_images = []
+    if data.category:
+        from app.config import STATIC_DIR
+        cat_dir = STATIC_DIR / "uploads" / data.category.lower()
+        if cat_dir.exists():
+            img_files = list(cat_dir.glob("*.png")) + list(cat_dir.glob("*.jpg")) + list(cat_dir.glob("*.jpeg"))
+            uploaded_images = [str(p) for p in img_files]
+
+    # 2. Generate procedural designs (will use uploaded_images if available)
     designs_data = generate_designs(
         business_name=data.business_name,
         bottle_text=data.bottle_text,
         category=data.category,
         bottle_size=data.bottle_size,
         style=data.style,
+        uploaded_images=uploaded_images
     )
     procedural_designs = [GeneratedDesign(**d) for d in designs_data]
 
     # Combine: put database templates first, then fill up with procedural ones
     all_combined = db_designs + procedural_designs
-    
-    # Custom Override for Category Uploads
-    if data.category and data.category.lower() == "hotel":
-        cat_designs = []
-        for i in range(1, 13):
-            cat_designs.append(GeneratedDesign(
-                id=f"hotel_custom_{i}",
-                name=f"Hotel Collection {i}",
-                preview_url=f"/static/uploads/hotel/hotel_{i}.png",
-                style="luxury",
-                colors=["#000000", "#ffffff"],
-                template_id=None,
-                business_name=data.business_name,
-                bottle_text=data.bottle_text
-            ))
-        return DesignGenerateResponse(designs=cat_designs, count=len(cat_designs))
-
-    if data.category:
-        from app.config import STATIC_DIR
-        cat_dir = STATIC_DIR / "uploads" / data.category.lower()
-        if cat_dir.exists():
-            cat_designs = []
-            img_files = list(cat_dir.glob("*.png")) + list(cat_dir.glob("*.jpg")) + list(cat_dir.glob("*.jpeg"))
-            if img_files:
-                for i, img_path in enumerate(img_files, 1):
-                    cat_designs.append(GeneratedDesign(
-                        id=f"{data.category.lower()}_custom_{i}",
-                        name=f"{data.category.capitalize()} Collection {i}",
-                        preview_url=f"/static/uploads/{data.category.lower()}/{img_path.name}",
-                        style="luxury",
-                        colors=["#000000", "#ffffff"],
-                        template_id=None,
-                        business_name=data.business_name,
-                        bottle_text=data.bottle_text
-                    ))
-                return DesignGenerateResponse(designs=cat_designs, count=len(cat_designs))
 
     return DesignGenerateResponse(designs=all_combined, count=len(all_combined))
 
