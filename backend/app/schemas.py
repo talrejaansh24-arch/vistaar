@@ -70,6 +70,7 @@ class GeneratedDesign(BaseModel):
     template_id: Optional[int] = None
     business_name: Optional[str] = None
     bottle_text: Optional[str] = None
+    base_image_url: Optional[str] = None
 
 
 class DesignGenerateResponse(BaseModel):

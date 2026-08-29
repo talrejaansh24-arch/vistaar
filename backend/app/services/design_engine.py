@@ -1,5 +1,6 @@
 import uuid
 from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
 from app.config import GENERATED_DIR, TEMPLATES_DIR
 
 # ── Color Palettes by Category ──
@@ -734,7 +735,8 @@ def generate_designs(
                 "style": f"Uploaded_{idx}",
                 "colors": ["#ffffff", "#000000", "#555555"],
                 "draw": make_draw_func(img_path, overlay_choice),
-                "style_groups": ["modern", "luxury", "minimal", "classic", "eco", "premium", "bold"] # Matches any style filter
+                "style_groups": ["modern", "luxury", "minimal", "classic", "eco", "premium", "bold"], # Matches any style filter
+                "base_image_url": f"/static/uploads/{category.lower()}/{Path(img_path).name}"
             })
     else:
         # The default procedural designs, now intelligently mapped to relevant categories!
@@ -820,6 +822,7 @@ def generate_designs(
             "template_id": None,
             "business_name": drawn_business_name,
             "bottle_text": drawn_bottle_text,
+            "base_image_url": meta.get("base_image_url")
         })
         
     return designs

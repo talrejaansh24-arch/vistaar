@@ -140,7 +140,123 @@ export default function EditorPage() {
     canvas.add(labelBase);
 
     // 2. Draw Style-Specific Vectors
-    const isCustomTemplate = !palettes[style];
+    const isUploadedTemplate = style.startsWith('Uploaded_');
+    const isCustomTemplate = !palettes[style] && !isUploadedTemplate;
+
+    if (isUploadedTemplate) {
+      // Determine overlay type based on the ID modulo 3 (matching backend logic)
+      const uploadIdx = parseInt(style.split('_')[1]) || 0;
+      const overlayTypes = ["luxury", "minimal", "modern"];
+      const overlayChoice = overlayTypes[uploadIdx % overlayTypes.length];
+      
+      const imgUrl = currentDesign?.base_image_url || currentDesign?.preview_url || currentDesign?.file_path;
+      // We must strip the backend PIL text generation so we only use the raw image.
+      // Wait, the backend currently bakes the text into preview_url for uploaded designs!
+      // But the frontend should just load it as a background and overlay editable text anyway.
+      // Ideally we load the raw upload path if available, but for now we'll use preview_url.
+      
+      // Let's create the editable text first
+      let brandColor = '#ffffff';
+      let tagColor = '#ffffff';
+      let brandY = centerY;
+      let tagY = centerY + 40;
+      
+      if (overlayChoice === 'luxury') {
+        // Luxury: Dark overlay, gold borders
+        const darkOverlay = new Rect({
+          left: centerX, top: centerY, width: ARTBOARD_WIDTH, height: ARTBOARD_HEIGHT,
+          fill: 'rgba(0,0,0,0.4)', originX: 'center', originY: 'center', selectable: false, evented: false
+        });
+        const goldBorder1 = new Rect({
+          left: centerX, top: centerY, width: ARTBOARD_WIDTH - 40, height: ARTBOARD_HEIGHT - 40,
+          stroke: 'rgba(212, 175, 55, 0.8)', strokeWidth: 2, fill: 'transparent',
+          originX: 'center', originY: 'center', selectable: false, evented: false
+        });
+        canvas.add(darkOverlay, goldBorder1);
+        brandColor = '#ffffff';
+        tagColor = '#d4af37';
+        brandY = centerY - 10;
+        tagY = centerY + 30;
+      } 
+      else if (overlayChoice === 'minimal') {
+        // Minimal: White block in middle
+        const whiteBlock = new Rect({
+          left: centerX, top: centerY, width: ARTBOARD_WIDTH, height: 120,
+          fill: 'rgba(255,255,255,0.9)', originX: 'center', originY: 'center', selectable: false, evented: false
+        });
+        canvas.add(whiteBlock);
+        brandColor = '#222222';
+        tagColor = '#666666';
+        brandY = centerY - 10;
+        tagY = centerY + 30;
+      }
+      else if (overlayChoice === 'modern') {
+        // Modern: Side strip
+        const sideStrip = new Rect({
+          left: artLeft, top: artTop, width: 80, height: ARTBOARD_HEIGHT,
+          fill: 'rgba(0, 168, 255, 0.85)', originX: 'left', originY: 'top', selectable: false, evented: false
+        });
+        const fadeBlock = new Rect({
+          left: artLeft + 80, top: artTop, width: ARTBOARD_WIDTH - 80, height: ARTBOARD_HEIGHT,
+          fill: 'rgba(0,0,0,0.3)', originX: 'left', originY: 'top', selectable: false, evented: false
+        });
+        canvas.add(sideStrip, fadeBlock);
+        brandColor = '#ffffff';
+        tagColor = '#ffffff';
+        brandY = centerY;
+        tagY = centerY + 40;
+      }
+
+      const title = new Textbox(brand.toUpperCase(), {
+        left: overlayChoice === 'modern' ? centerX + 40 : centerX,
+        top: brandY,
+        width: 300,
+        fill: brandColor,
+        fontSize: overlayChoice === 'minimal' ? 32 : 28,
+        fontWeight: 'bold',
+        fontFamily: 'Outfit, sans-serif',
+        textAlign: 'center',
+        selectable: true,
+        originX: 'center',
+        originY: 'center',
+        name: 'titleText'
+      });
+
+      const subtitle = new Textbox(tagline.toUpperCase(), {
+        left: overlayChoice === 'modern' ? centerX + 40 : centerX,
+        top: tagY,
+        width: 300,
+        fill: tagColor,
+        fontSize: 14,
+        fontFamily: 'Inter, sans-serif',
+        textAlign: 'center',
+        selectable: true,
+        originX: 'center',
+        originY: 'center',
+        name: 'subtitleText'
+      });
+
+      canvas.add(title, subtitle);
+
+      if (imgUrl) {
+        FabricImage.fromURL(resolveAssetUrl(imgUrl), { crossOrigin: 'anonymous' }).then((img) => {
+          img.set({
+            left: centerX, top: centerY, originX: 'center', originY: 'center',
+            selectable: false, evented: false, name: 'templateBg'
+          });
+          // Cover logic
+          const scale = Math.max(ARTBOARD_WIDTH / img.width, ARTBOARD_HEIGHT / img.height);
+          img.scale(scale);
+          canvas.add(img);
+          img.sendToBack();
+          labelBase.sendToBack();
+          canvas.renderAll();
+          saveHistoryState();
+        }).catch(err => console.error(err));
+      }
+      return;
+    }
+
     if (isCustomTemplate) {
       labelBase.set({ fill: '#ffffff' });
       
@@ -175,7 +291,7 @@ export default function EditorPage() {
 
       canvas.add(title, subtitle);
 
-      const imgUrl = currentDesign?.preview_url || currentDesign?.file_path;
+      const imgUrl = currentDesign?.base_image_url || currentDesign?.preview_url || currentDesign?.file_path;
       if (imgUrl) {
         FabricImage.fromURL(resolveAssetUrl(imgUrl), { crossOrigin: 'anonymous' }).then((img) => {
           img.set({
