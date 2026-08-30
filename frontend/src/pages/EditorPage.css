@@ -876,7 +876,7 @@
 
 .studio-shell {
   display: grid;
-  grid-template-columns: 80px 320px 1fr;
+  grid-template-columns: 80px 320px 1fr 280px;
   height: calc(100vh - 64px);
   background: #f3f4f6;
   color: #1f2937;
