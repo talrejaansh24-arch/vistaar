@@ -45,7 +45,7 @@ def enhance_user_prompt(user_prompt: str) -> str:
         '- No explanations, no markdown, no extra text.'
     )
 
-    model_name = "gemini-2.5-flash"
+    model_name = "gemini-1.5-flash"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
 
     request_body = {
@@ -126,9 +126,9 @@ def generate_ai_designs(
     if enhance_prompt:
         effective_prompt = enhance_user_prompt(prompt)
     
-    # We use gemini-2.5-flash text model instead of image model due to quota limits,
+    # We use gemini-1.5-flash text model instead of image model due to quota limits,
     # and instead map the prompt to our existing generative templates in design_engine.py
-    model_name = "gemini-2.5-flash"
+    model_name = "gemini-1.5-flash"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
     
     request_body = {
