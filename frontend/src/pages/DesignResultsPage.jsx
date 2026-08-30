@@ -213,7 +213,7 @@ export default function DesignResultsPage() {
             <div className="quick-order-preview-panel">
               <div className="quick-preview-image-wrap">
                 {selectedDesignObj?.preview_url ? (
-                  <img src={resolveAssetUrl(selectedDesignObj.preview_url)} alt={selectedDesignObj.name} onError={(e) => { e.target.src = " /placeholder.png\; }} />
+                  <img src={resolveAssetUrl(selectedDesignObj.preview_url)} alt={selectedDesignObj.name} onError={(e) => { e.target.src = "/placeholder.png"; }} />
                 ) : (
                   <div style={{ color: 'var(--text-muted)' }}>No preview available</div>
                 )}
