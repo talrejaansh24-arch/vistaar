@@ -1807,7 +1807,7 @@ export default function EditorPage() {
       canvas.dispose();
       fabricRef.current = null;
     };
-  }, [currentDesign, navigate]);
+  }, [navigate]);
 
   const unitPrice = useMemo(() => {
     const base = bottleSizes.find((x) => x.id === activeSize)?.price || 20;
@@ -2043,6 +2043,8 @@ export default function EditorPage() {
         setTaglineDraft(tagline);
       }
       setSelectedTemplateId(templateId);
+      // Update store so saving/cart actions capture the new template metadata
+      setCurrentDesign(found);
     }
     
     const canvas = fabricRef.current;
