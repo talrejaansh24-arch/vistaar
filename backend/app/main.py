@@ -157,6 +157,19 @@ async def startup_event():
 
     # Start the daily design generator worker
     try:
+        # Purge legacy static templates to ensure old blurry mockups are removed
+        from app.database import SessionLocal
+        from app.models import DesignTemplate
+        db = SessionLocal()
+        purged = db.query(DesignTemplate).filter(
+            (DesignTemplate.file_path.like("/static/templates/%")) |
+            (DesignTemplate.file_path.like("%blurry%"))
+        ).delete(synchronize_session=False)
+        if purged > 0:
+            print(f"[startup] Purged {purged} legacy templates from SQLite database.")
+            db.commit()
+        db.close()
+        
         from app.workers.design_worker import start_scheduler
         start_scheduler()
     except Exception as e:

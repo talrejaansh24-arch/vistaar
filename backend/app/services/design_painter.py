@@ -76,9 +76,9 @@ PALETTES: dict[str, dict[str, list[tuple]]] = {
 }
 
 # ────────────────────────────────────────────────────────────────
-# Canvas constants
+# Canvas constants - 2048x2048 ensures crisp, high-res 4K labels
 # ────────────────────────────────────────────────────────────────
-W, H = 800, 800
+W, H = 2048, 2048
 
 
 def _daily_rng(category: str, style: str, variant: int) -> random.Random:
@@ -135,8 +135,8 @@ def _paint_geometric(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rn
         alpha = rng.randint(20, 60)
         color_with_alpha = accent + (alpha,)
         shape = rng.choice(["rect", "ellipse", "triangle"])
-        x0, y0 = rng.randint(-100, W), rng.randint(-100, H)
-        x1, y1 = x0 + rng.randint(80, 350), y0 + rng.randint(80, 350)
+        x0, y0 = rng.randint(-200, W), rng.randint(-200, H)
+        x1, y1 = x0 + rng.randint(200, 900), y0 + rng.randint(200, 900)
         if shape == "rect":
             draw.rectangle([x0, y0, x1, y1], fill=color_with_alpha)
         elif shape == "ellipse":
@@ -148,12 +148,12 @@ def _paint_geometric(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rn
 
 def _paint_circles(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
     """Concentric dot grid."""
-    spacing = rng.randint(30, 55)
-    radius = rng.randint(2, 6)
+    spacing = rng.randint(80, 140)
+    radius = rng.randint(6, 16)
     for row in range(-1, H // spacing + 2):
         for col in range(-1, W // spacing + 2):
-            cx = col * spacing + rng.randint(-5, 5)
-            cy = row * spacing + rng.randint(-5, 5)
+            cx = col * spacing + rng.randint(-15, 15)
+            cy = row * spacing + rng.randint(-15, 15)
             alpha = rng.randint(30, 80)
             draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius],
                          fill=accent + (alpha,))
@@ -161,8 +161,8 @@ def _paint_circles(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random)
 
 def _paint_lines(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
     """Diagonal scan-line texture."""
-    gap = rng.randint(12, 28)
-    width = rng.randint(1, 3)
+    gap = rng.randint(30, 80)
+    width = rng.randint(3, 8)
     alpha = rng.randint(25, 55)
     angle = rng.choice([30, 45, 60, 135, -45])
     for i in range(-H, W + H, gap):
@@ -173,10 +173,10 @@ def _paint_lines(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
 
 
 def _paint_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
-    amp = rng.randint(20, 60)
-    freq = rng.uniform(0.005, 0.015)
+    amp = rng.randint(50, 150)
+    freq = rng.uniform(0.002, 0.006)
     phase = rng.uniform(0, 2 * math.pi)
-    gap = rng.randint(30, 60)
+    gap = rng.randint(80, 160)
     alpha = rng.randint(30, 60)
     for wave_y in range(0, H + gap, gap):
         pts = []
@@ -184,14 +184,14 @@ def _paint_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
             y = wave_y + amp * math.sin(freq * x + phase)
             pts.append((x, int(y)))
         if len(pts) > 1:
-            draw.line(pts, fill=accent + (alpha,), width=rng.randint(1, 3))
+            draw.line(pts, fill=accent + (alpha,), width=rng.randint(3, 8))
 
 
 def _paint_border(draw: ImageDraw.ImageDraw, border: tuple, accent: tuple, rng: random.Random):
     """Layered decorative border."""
-    margin = rng.randint(20, 45)
-    thickness = rng.randint(4, 10)
-    inner_gap = rng.randint(6, 14)
+    margin = rng.randint(50, 120)
+    thickness = rng.randint(10, 25)
+    inner_gap = rng.randint(15, 35)
 
     # Outer frame
     draw.rectangle([margin, margin, W - margin, H - margin],
@@ -202,7 +202,7 @@ def _paint_border(draw: ImageDraw.ImageDraw, border: tuple, accent: tuple, rng: 
                    outline=accent, width=max(1, thickness // 2))
 
     # Corner accents
-    size = rng.randint(18, 36)
+    size = rng.randint(45, 90)
     corners = [
         (margin, margin, margin + size, margin + size),
         (W - margin - size, margin, W - margin, margin + size),
