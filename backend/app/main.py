@@ -257,7 +257,10 @@ async def startup_event():
         # Seed Design Templates
         from app.models import DesignTemplate
         if db.query(DesignTemplate).count() == 0:
-            templates_to_seed = []
+            import json, os
+            seed_path = os.path.join(os.path.dirname(__file__), "..", "seed_data.json")
+            with open(seed_path, "r") as f:
+                templates_to_seed = json.load(f)
             for t in templates_to_seed:
                 db.add(DesignTemplate(**t))
             print("Auto-seeded default category design templates.")
