@@ -257,56 +257,7 @@ async def startup_event():
         # Seed Design Templates
         from app.models import DesignTemplate
         if db.query(DesignTemplate).count() == 0:
-            templates_to_seed = [
-                # Hotel category
-                {"name": "Santi Weihermann Elegant", "category": "hotel", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-                {"name": "Dra. Patricia Ruby Minimal", "category": "hotel", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-                {"name": "Verdant O Shield", "category": "hotel", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Private Water Deep Blue", "category": "hotel", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-                {"name": "Veridian Naturals Eco", "category": "hotel", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-
-                # Restaurant category
-                {"name": "Dra. Patricia Ruby Minimal", "category": "restaurant", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-                {"name": "Verdant O Shield", "category": "restaurant", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Santi Weihermann Elegant", "category": "restaurant", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-                {"name": "Veridian Naturals Eco", "category": "restaurant", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-                {"name": "Private Water Deep Blue", "category": "restaurant", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-
-                # Cafe category
-                {"name": "Santi Weihermann Elegant", "category": "cafe", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-                {"name": "Dra. Patricia Ruby Minimal", "category": "cafe", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-                {"name": "Veridian Naturals Eco", "category": "cafe", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-                {"name": "Verdant O Shield", "category": "cafe", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Private Water Deep Blue", "category": "cafe", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-
-                # Event category
-                {"name": "Dra. Patricia Ruby Minimal", "category": "event", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-                {"name": "Private Water Deep Blue", "category": "event", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-                {"name": "Santi Weihermann Elegant", "category": "event", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-                {"name": "Verdant O Shield", "category": "event", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Veridian Naturals Eco", "category": "event", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-
-                # Gym category
-                {"name": "Veridian Naturals Eco", "category": "gym", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-                {"name": "Dra. Patricia Ruby Minimal", "category": "gym", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-                {"name": "Private Water Deep Blue", "category": "gym", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-                {"name": "Verdant O Shield", "category": "gym", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Santi Weihermann Elegant", "category": "gym", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-
-                # Corporate category
-                {"name": "Private Water Deep Blue", "category": "corporate", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-                {"name": "Verdant O Shield", "category": "corporate", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Santi Weihermann Elegant", "category": "corporate", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-                {"name": "Veridian Naturals Eco", "category": "corporate", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-                {"name": "Dra. Patricia Ruby Minimal", "category": "corporate", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-
-                # General category
-                {"name": "Veridian Naturals Eco", "category": "general", "file_path": "/static/templates/hotel_5.png", "style": "eco", "colors": ["#7f8e79", "#ffffff"]},
-                {"name": "Santi Weihermann Elegant", "category": "general", "file_path": "/static/templates/hotel_1.png", "style": "luxury", "colors": ["#dcd3be", "#563624"]},
-                {"name": "Private Water Deep Blue", "category": "general", "file_path": "/static/templates/hotel_4.png", "style": "premium", "colors": ["#042d5f", "#ffffff"]},
-                {"name": "Verdant O Shield", "category": "general", "file_path": "/static/templates/hotel_3.png", "style": "luxury", "colors": ["#fdfdfd", "#083c27"]},
-                {"name": "Dra. Patricia Ruby Minimal", "category": "general", "file_path": "/static/templates/hotel_2.png", "style": "minimal", "colors": ["#800918", "#ffffff"]},
-            ]
+            templates_to_seed = []
             for t in templates_to_seed:
                 db.add(DesignTemplate(**t))
             print("Auto-seeded default category design templates.")
