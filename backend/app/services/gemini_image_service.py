@@ -137,7 +137,7 @@ def generate_ai_designs(
         # We add some variation to the prompt to ensure unique images
         variation = ["masterpiece, seamless abstract pattern", "highly detailed beautiful gradient", "premium elegant texture", "hyperrealistic graphic art"][i % 4]
         
-        full_prompt = f"A beautiful, colorful, completely flat 2D rectangular background graphic texture for a {category} label. Theme: {style}. {effective_prompt}. {variation}. NO TEXT, NO WORDS, NO FONTS, NO BOTTLE SHAPE, NO 3D, just the flat artwork pattern."
+        full_prompt = f"Abstract beautiful flat background texture for {category} label, {style} style, {variation}, no text, no bottle"
         
         encoded_prompt = urllib.parse.quote(full_prompt)
         seed = int(time.time() * 1000) + i
