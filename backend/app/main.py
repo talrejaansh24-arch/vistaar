@@ -157,16 +157,13 @@ async def startup_event():
 
     # Start the daily design generator worker
     try:
-        # Purge legacy static templates to ensure old blurry mockups are removed
+        # Force clear all template records once to regenerate with new Mojo/Aqua-inspired 4K styles
         from app.database import SessionLocal
         from app.models import DesignTemplate
         db = SessionLocal()
-        purged = db.query(DesignTemplate).filter(
-            (DesignTemplate.file_path.like("/static/templates/%")) |
-            (DesignTemplate.file_path.like("%blurry%"))
-        ).delete(synchronize_session=False)
+        purged = db.query(DesignTemplate).delete(synchronize_session=False)
         if purged > 0:
-            print(f"[startup] Purged {purged} legacy templates from SQLite database.")
+            print(f"[startup] Purged {purged} old template records to trigger Mojo/Aqua high-res rebuild.")
             db.commit()
         db.close()
         

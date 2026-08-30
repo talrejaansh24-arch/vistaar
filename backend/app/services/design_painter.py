@@ -226,6 +226,114 @@ def _paint_border(draw: ImageDraw.ImageDraw, border: tuple, accent: tuple, rng: 
         draw.line([(W - margin - 4, ty), (W - margin + 4, ty)], fill=accent, width=2)
 
 
+def _paint_diagonal_split(draw: ImageDraw.ImageDraw, bg: tuple, accent: tuple, border: tuple, rng: random.Random):
+    """Clean minimal two-tone diagonal split inspired by Gym reference (Image 3)"""
+    config = rng.choice([
+        [(0, 0), (W, 0), (0, H)],  # Top-left triangle
+        [(0, 0), (W, H), (0, H)],  # Bottom-left triangle
+        [(W, 0), (W, H), (0, H)],  # Bottom-right triangle
+    ])
+    draw.polygon(config, fill=accent + (220,))
+    # Draw separating line
+    line_width = rng.randint(10, 24)
+    draw.line([config[0], config[2] if len(config) > 2 else config[1]], fill=border + (255,), width=line_width)
+
+
+def _paint_drip_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
+    """Liquid drip effect inspired by Mojo (Image 1) and Cafe (Image 4)"""
+    position = rng.choice(["top", "bottom"])
+    wave_h = rng.randint(H // 4, H // 2)
+    
+    pts = []
+    amp = rng.randint(80, 200)
+    freq = rng.uniform(0.002, 0.005)
+    phase = rng.uniform(0, 2 * math.pi)
+    
+    if position == "top":
+        pts.append((0, 0))
+        for x in range(0, W + 20, 20):
+            y = wave_h + amp * math.sin(freq * x + phase)
+            pts.append((x, int(y)))
+        pts.append((W, 0))
+    else:
+        pts.append((W, H))
+        for x in range(W, -20, -20):
+            y = H - wave_h + amp * math.sin(freq * x + phase)
+            pts.append((x, int(y)))
+        pts.append((0, H))
+        
+    draw.polygon(pts, fill=accent + (230,))
+    
+    # Add hanging rounded drips
+    drip_count = rng.randint(5, 12)
+    for _ in range(drip_count):
+        dx = rng.randint(100, W - 100)
+        dy = wave_h + amp * math.sin(freq * dx + phase) if position == "top" else (H - wave_h + amp * math.sin(freq * dx + phase))
+        drip_length = rng.randint(80, 300)
+        drip_w = rng.randint(25, 70)
+        
+        if position == "top":
+            draw.line([(dx, int(dy)), (dx, int(dy + drip_length))], fill=accent + (230,), width=drip_w)
+            draw.ellipse([dx - drip_w//2, int(dy + drip_length - drip_w//2), dx + drip_w//2, int(dy + drip_length + drip_w//2)], fill=accent + (230,))
+        else:
+            draw.line([(dx, int(dy)), (dx, int(dy - drip_length))], fill=accent + (230,), width=drip_w)
+            draw.ellipse([dx - drip_w//2, int(dy - drip_length - drip_w//2), dx + drip_w//2, int(dy - drip_length + drip_w//2)], fill=accent + (230,))
+
+
+def _paint_cosmic_aurora(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rng: random.Random):
+    """Overlapping cosmic aurora wave flows + stars inspired by Aqua (Image 2)"""
+    wave_count = rng.randint(2, 4)
+    for w in range(wave_count):
+        amp = rng.randint(150, 350)
+        freq = rng.uniform(0.001, 0.003)
+        phase = rng.uniform(0, 2 * math.pi) + w * 1.5
+        base_y = rng.randint(H // 3, 2 * H // 3)
+        alpha = rng.randint(65, 125)
+        color = accent if w % 2 == 0 else border
+        
+        pts = []
+        pts.append((0, H))
+        for x in range(0, W + 40, 40):
+            y = base_y + amp * math.sin(freq * x + phase)
+            pts.append((x, int(y)))
+        pts.append((W, H))
+        draw.polygon(pts, fill=color + (alpha,))
+        
+    # Draw four-pointed stars
+    star_count = rng.randint(15, 30)
+    for _ in range(star_count):
+        sx = rng.randint(100, W - 100)
+        sy = rng.randint(100, H - 100)
+        size = rng.randint(15, 45)
+        alpha = rng.randint(120, 255)
+        draw.line([(sx - size, sy), (sx + size, sy)], fill=(255, 255, 255, alpha), width=5)
+        draw.line([(sx, sy - size), (sx, sy + size)], fill=(255, 255, 255, alpha), width=5)
+
+
+def _paint_product_badge(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rng: random.Random):
+    """Decorative badge elements inspired by Cafe (Image 4) and Juice (Image 5)"""
+    badge_type = rng.choice(["shield", "diamond", "circle"])
+    cx, cy = W // 2, H // 2
+    size = rng.randint(500, 800)
+    alpha = rng.randint(180, 245)
+    
+    if badge_type == "circle":
+        draw.ellipse([cx - size, cy - size, cx + size, cy + size], outline=border + (255,), width=24)
+        draw.ellipse([cx - size + 30, cy - size + 30, cx + size - 30, cy + size - 30], fill=accent + (alpha,))
+    elif badge_type == "diamond":
+        pts = [(cx, cy - size), (cx + size, cy), (cx, cy + size), (cx - size, cy)]
+        draw.polygon(pts, outline=border + (255,), fill=accent + (alpha,), width=24)
+    else:  # shield
+        pts = [
+            (cx - size, cy - size),
+            (cx + size, cy - size),
+            (cx + size, cy + size // 2),
+            (cx, cy + size),
+            (cx - size, cy + size // 2)
+        ]
+        draw.polygon(pts, outline=border + (255,), fill=accent + (alpha,), width=24)
+
+
 # ────────────────────────────────────────────────────────────────
 # Public API
 # ────────────────────────────────────────────────────────────────
@@ -252,15 +360,34 @@ def generate_label_design(category: str, style: str, variant: int = 0, out_path:
     # 1. Gradient base
     _paint_gradient(draw, bg, accent, rng)
 
-    # 2. Texture layer (pick one per variant)
-    texture = rng.choice(["geo", "circles", "lines", "waves"])
-    if texture == "geo":
-        _paint_geometric(odraw, accent, border, rng)
-    elif texture == "circles":
-        _paint_circles(odraw, accent, rng)
-    elif texture == "lines":
-        _paint_lines(odraw, accent, rng)
-    else:
+    # 2. Texture layer (determined by style to match user reference images)
+    style_lower = style.lower()
+    if style_lower == "minimal":
+        # Gym split style or clean geometric lines
+        if rng.choice([True, False]):
+            _paint_diagonal_split(odraw, bg, accent, border, rng)
+        else:
+            _paint_geometric(odraw, accent, border, rng)
+    elif style_lower == "modern":
+        # Cosmic aurora wave flow + stars (Image 2)
+        if rng.choice([True, False]):
+            _paint_cosmic_aurora(odraw, accent, border, rng)
+        else:
+            _paint_waves(odraw, accent, rng)
+    elif style_lower == "luxury":
+        # Mojo liquid drip style (Image 1) or premium geometric accents
+        if rng.choice([True, False]):
+            _paint_drip_waves(odraw, accent, rng)
+        else:
+            _paint_geometric(odraw, accent, border, rng)
+    elif style_lower == "classic":
+        # Cafe product badges or concentric circles (Image 4 / 5)
+        if rng.choice([True, False]):
+            _paint_product_badge(odraw, accent, border, rng)
+        else:
+            _paint_circles(odraw, accent, rng)
+    else:  # eco-friendly or general
+        # Organic wave flows
         _paint_waves(odraw, accent, rng)
 
     # 3. Composite overlay
