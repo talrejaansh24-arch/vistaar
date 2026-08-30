@@ -23,67 +23,28 @@ def generate(
     data: DesignGenerateRequest,
     db: Session = Depends(get_db),
 ):
-    """Generate design mockups based on user input. No auth required."""
-    # 1. Fetch custom uploaded templates from database
-    db_designs = []
-    try:
-        # Filter by style or category if provided
-        query = db.query(DesignTemplate)
-        if data.category:
-            query = query.filter(DesignTemplate.category == data.category.lower())
-        if data.style:
-            query = query.filter(DesignTemplate.style == data.style.lower())
-        
-        db_templates = query.all()
-        for t in db_templates:
-            db_designs.append(GeneratedDesign(
-                id=f"db_{t.id}",
-                name=t.name,
-                preview_url=t.file_path,
-                style=t.style or "modern",
-                colors=t.colors or ["#ffffff", "#000000"],
-                template_id=t.id,
-                business_name=data.business_name,
-                bottle_text=data.bottle_text
-            ))
-            
-        # Fallback if filters yield 0 results: Just return general designs
-        if not db_designs:
-            fallback_templates = db.query(DesignTemplate).limit(15).all()
-            for t in fallback_templates:
-                db_designs.append(GeneratedDesign(
-                    id=f"db_{t.id}",
-                    name=t.name,
-                    preview_url=t.file_path,
-                    style=t.style or "modern",
-                    colors=t.colors or ["#ffffff", "#000000"],
-                    template_id=t.id,
-                    business_name=data.business_name,
-                    bottle_text=data.bottle_text
-                ))
-    except Exception as e:
-        print(f"[Generate] Database templates load warning: {e}")
-
-    # Custom Override for Category Uploads (Fetch them to use as dynamic backgrounds)
-    uploaded_images = []
-    if data.category:
-        from app.config import STATIC_DIR
-        cat_dir = STATIC_DIR / "uploads" / data.category.lower()
-        if cat_dir.exists():
-            img_files = list(cat_dir.glob("*.png")) + list(cat_dir.glob("*.jpg")) + list(cat_dir.glob("*.jpeg"))
-            uploaded_images = [str(p) for p in img_files]
-
-    # 2. Return ONLY the crisp 4K database designs, remove procedural blurry designs
-    import random
+    """Generate design mockups based on user input."""
+    # Since static images are uneditable, we let the AI generate a custom flat background label dynamically!
+    from app.services.gemini_image_service import generate_ai_designs
     
-    # Optionally shuffle if there are many to make it look dynamic
-    if len(db_designs) > 8:
-        random.shuffle(db_designs)
-        db_designs = db_designs[:15] # Return top 15 results
-
-    all_combined = db_designs
-
+    # Construct a descriptive prompt for the label texture
+    prompt = f"{data.style} {data.category} label background"
+    
+    designs_data = generate_ai_designs(
+        prompt=prompt,
+        business_name=data.business_name or "BRAND",
+        count=3,
+        detail="high",
+        category=data.category or "general",
+        style=data.style or "modern",
+        enhance_prompt=False
+    )
+    
+    # Convert dicts to GeneratedDesign models
+    all_combined = [GeneratedDesign(**d) for d in designs_data]
+    
     return DesignGenerateResponse(designs=all_combined, count=len(all_combined))
+
 
 
 @router.post("/generate-ai", response_model=DesignGenerateResponse)
@@ -126,20 +87,22 @@ def generate_template(data: TemplateSearchRequest):
     elif any(word in query_lower for word in ["corporate", "business"]):
         category = "corporate"
 
-    db = next(get_db())
-    db_templates = db.query(DesignTemplate).filter(DesignTemplate.category == category).limit(data.count).all()
-    designs = []
-    for t in db_templates:
-        designs.append(GeneratedDesign(
-            id=f"db_{t.id}",
-            name=t.name,
-            preview_url=t.file_path,
-            style=t.style or "modern",
-            colors=t.colors or ["#ffffff", "#000000"],
-            template_id=t.id,
-            business_name=data.query.upper()[:15] if data.query else "TEMPLATE",
-            bottle_text="Premium Quality"
-        ))
+    # Since we are prioritizing dynamically editable AI generations:
+    from app.services.gemini_image_service import generate_ai_designs
+    
+    prompt = f"abstract {category} design"
+    
+    designs_data = generate_ai_designs(
+        prompt=prompt,
+        business_name=data.query.upper()[:15] if data.query else "TEMPLATE",
+        count=data.count,
+        detail="high",
+        category=category,
+        style="modern",
+        enhance_prompt=False
+    )
+    
+    designs = [GeneratedDesign(**d) for d in designs_data]
 
     return DesignGenerateResponse(designs=designs, count=len(designs))
 

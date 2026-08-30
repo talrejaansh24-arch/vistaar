@@ -132,12 +132,13 @@ def generate_ai_designs(
     designs = []
     import time
     
-    # Generate actual unique images via a reliable AI image API (Pollinations as robust zero-error generator)
-    # The prompt incorporates the business name and category to ensure a tailored design.
+    # Generate actual unique flat label backgrounds via Pollinations AI
     for i in range(safe_count):
         # We add some variation to the prompt to ensure unique images
-        variation = ["masterpiece", "highly detailed", "premium lighting", "hyperrealistic"][i % 4]
-        full_prompt = f"A product packaging label design for {category} named '{business_name}'. {effective_prompt}. Style: {style}. {variation}, professional design."
+        variation = ["masterpiece, seamless pattern", "highly detailed abstract", "premium minimalist gradient", "hyperrealistic texture"][i % 4]
+        
+        # VERY STRICT PROMPT: We ONLY want a flat background for a label. NO text, NO bottle, NO 3D objects.
+        full_prompt = f"A completely flat, blank, 2D rectangular background graphic texture for a {category} label. Theme: {style}. {effective_prompt}. {variation}. NO TEXT, NO WORDS, NO FONTS, NO BOTTLE SHAPE, NO 3D, just the flat empty artwork pattern."
         
         encoded_prompt = urllib.parse.quote(full_prompt)
         # Append a unique seed so we get distinct images per iteration
