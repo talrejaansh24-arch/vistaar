@@ -261,18 +261,15 @@ async def startup_event():
                 db.add(SiteConfig(key=k, value=v))
                 print(f"Auto-seeded default pricing key: {k} = {v}")
 
-        # Seed Design Templates
+        # Generate fresh daily design templates if DB is empty
         from app.models import DesignTemplate
         if db.query(DesignTemplate).count() == 0:
-            import json, os
-            seed_path = os.path.join(os.path.dirname(__file__), "..", "seed_data.json")
-            with open(seed_path, "r") as f:
-                templates_to_seed = json.load(f)
-            for t in templates_to_seed:
-                db.add(DesignTemplate(**t))
-            print("Auto-seeded default category design templates.")
+            print("Templates DB is empty! Running initial programmatic label design generation...")
+            from app.workers.design_worker import run_generation
+            run_generation(variants_per_combo=3)
 
         db.commit()
         db.close()
     except Exception as e:
         print(f"[startup] Error during auto-seeding: {e}")
+

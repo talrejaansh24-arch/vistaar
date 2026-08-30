@@ -101,19 +101,31 @@ def _lerp_color(c1: tuple, c2: tuple, t: float) -> tuple[int, int, int]:
 # ────────────────────────────────────────────────────────────────
 
 def _paint_gradient(draw: ImageDraw.ImageDraw, bg: tuple, accent: tuple, rng: random.Random):
-    import numpy as np
     angle = rng.choice([0, 45, 90, 135, 180, 225, 270, 315])
-    rad = math.radians(angle)
-    xs = np.linspace(0, 1, W)
-    ys = np.linspace(0, 1, H)
-    xg, yg = np.meshgrid(xs, ys)
-    t = (xg * math.cos(rad) + yg * math.sin(rad))
-    t = (t - t.min()) / (t.max() - t.min() + 1e-9)
-    r = (bg[0] + (accent[0] - bg[0]) * t).astype(np.uint8)
-    g = (bg[1] + (accent[1] - bg[1]) * t).astype(np.uint8)
-    b = (bg[2] + (accent[2] - bg[2]) * t).astype(np.uint8)
-    grad_img = Image.fromarray(np.stack([r, g, b], axis=2), "RGB")
-    draw._image.paste(grad_img)
+    
+    # Create 1D gradient band
+    grad_1d = Image.new("RGB", (256, 1))
+    for x in range(256):
+        t = x / 255.0
+        r = int(bg[0] + (accent[0] - bg[0]) * t)
+        g = int(bg[1] + (accent[1] - bg[1]) * t)
+        b = int(bg[2] + (accent[2] - bg[2]) * t)
+        grad_1d.putpixel((x, 0), (r, g, b))
+        
+    # Scale up to cover rotated diagonal
+    diag = int(math.ceil(math.sqrt(W*W + H*H)))
+    grad_scaled = grad_1d.resize((diag, diag), Image.Resampling.BILINEAR)
+    
+    # Rotate
+    rotated = grad_scaled.rotate(angle, resample=Image.Resampling.BICUBIC, expand=False)
+    
+    # Crop center to match W, H
+    x0 = (diag - W) // 2
+    y0 = (diag - H) // 2
+    cropped = rotated.crop((x0, y0, x0 + W, y0 + H))
+    
+    # Paste onto underlying image
+    draw._image.paste(cropped)
 
 
 def _paint_geometric(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rng: random.Random):
