@@ -137,32 +137,19 @@ def generate_ai_designs(
         # We add some variation to the prompt to ensure unique images
         variation = ["masterpiece, seamless abstract pattern", "highly detailed beautiful gradient", "premium elegant texture", "hyperrealistic graphic art"][i % 4]
         
-        # VERY STRICT PROMPT: We ONLY want a flat background for a label. NO text, NO bottle, NO 3D objects.
         full_prompt = f"A beautiful, colorful, completely flat 2D rectangular background graphic texture for a {category} label. Theme: {style}. {effective_prompt}. {variation}. NO TEXT, NO WORDS, NO FONTS, NO BOTTLE SHAPE, NO 3D, just the flat artwork pattern."
         
         encoded_prompt = urllib.parse.quote(full_prompt)
-        # Append a unique seed so we get distinct images per iteration
         seed = int(time.time() * 1000) + i
-        # Reduce width/height slightly to make base64 payload fast and lightweight
-        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true&seed={seed}"
         
-        # Fetch the image to base64 to avoid frontend 429 rate limit & CORS issues in Editor
-        b64_img = ""
-        try:
-            req = request.Request(image_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-            with request.urlopen(req, timeout=10) as response:
-                import base64
-                img_data = response.read()
-                b64_img = "data:image/jpeg;base64," + base64.b64encode(img_data).decode('utf-8')
-        except Exception as e:
-            print(f"[Generate AI] Failed to fetch image {i}: {e}")
-            b64_img = "/placeholder.png"
+        # Reduce width/height slightly for faster loading
+        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true&seed={seed}"
             
         designs.append({
             "id": f"ai_{uuid.uuid4().hex[:8]}",
             "name": f"AI Concept {i + 1} - {business_name}",
-            "preview_url": b64_img,
-            "base_image_url": b64_img, # Base64 loads perfectly into Fabric.js!
+            "preview_url": image_url,
+            "base_image_url": image_url,
             "style": style,
             "colors": ["#ffffff", "#000000"],
             "business_name": business_name,

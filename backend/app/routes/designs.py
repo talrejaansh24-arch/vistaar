@@ -33,7 +33,7 @@ def generate(
     designs_data = generate_ai_designs(
         prompt=prompt,
         business_name=data.business_name or "BRAND",
-        count=6,
+        count=3,
         detail="high",
         category=data.category or "general",
         style=data.style or "modern",
