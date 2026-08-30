@@ -38,6 +38,7 @@
   z-index: 20; /* Fixed: Force overlay to appear above dynamic bottle text */
 }
 .design-card:hover .design-overlay { opacity: 1; }
+.design-card:hover .dynamic-label-text { opacity: 0 !important; }
 
 .overlay-content {
   display: flex;

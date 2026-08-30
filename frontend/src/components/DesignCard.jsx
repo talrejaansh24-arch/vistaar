@@ -144,7 +144,7 @@ export default function DesignCard({ design }) {
             
             {/* Dynamic Text Overlay on the Label */}
             {design.business_name && (
-              <div style={{
+              <div className="dynamic-label-text" style={{
                 position: 'absolute',
                 top: '50%',
                 left: '50%',
@@ -152,7 +152,8 @@ export default function DesignCard({ design }) {
                 textAlign: 'center',
                 width: '100%',
                 pointerEvents: 'none',
-                zIndex: 5
+                zIndex: 5,
+                transition: 'opacity 0.2s ease'
               }}>
                 <h2 style={{
                   color: '#fff',
@@ -209,7 +210,7 @@ export default function DesignCard({ design }) {
             position: 'absolute',
             top: '12px',
             right: '12px',
-            zIndex: 10,
+            zIndex: 100,
             background: isSaved ? '#f1c40f' : 'rgba(0,0,0,0.5)',
             border: 'none',
             borderRadius: '50%',
@@ -228,7 +229,7 @@ export default function DesignCard({ design }) {
           ★
         </button>
 
-        <div className="design-overlay">
+        <div className="design-overlay" style={{ zIndex: 50 }}>
           <div className="overlay-content" style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '85%' }}>
             <button className="btn btn-primary btn-sm" style={{ width: '100%', justifyContent: 'center' }} ref={customizeBtnRef} onClick={handleCustomize}>
               🎨 Customize
