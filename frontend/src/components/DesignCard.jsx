@@ -82,42 +82,123 @@ export default function DesignCard({ design }) {
 
   return (
     <div className="design-card card" ref={cardRef} onClick={handleCustomize} style={{ cursor: 'pointer', position: 'relative' }}>
-      <div className="design-preview">
-        <img src={design.preview_url} alt={design.name} onError={(e) => { e.target.src = "/placeholder.png"; }} />
+      <div className="design-preview" style={{ background: '#f8fafc', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
         
-        {/* Dynamic Text Overlay for Static DB Templates */}
-        {design.id && String(design.id).startsWith('db_') && design.business_name && (
+        {/* CSS Bottle Mockup Wrapper */}
+        <div className="css-bottle-mockup" style={{
+          position: 'relative',
+          width: '85px',
+          height: '240px',
+          background: 'linear-gradient(to right, #e2e8f0 0%, #ffffff 25%, #e2e8f0 80%, #cbd5e1 100%)',
+          borderRadius: '35px 35px 12px 12px / 20px 20px 10px 10px',
+          boxShadow: '2px 10px 20px rgba(0,0,0,0.1), inset -6px 0 12px rgba(0,0,0,0.08), inset 6px 0 12px rgba(255,255,255,0.8)',
+          marginTop: '20px',
+          marginBottom: '10px'
+        }}>
+          {/* Bottle Neck & Cap */}
           <div style={{
             position: 'absolute',
-            top: '50%',
+            top: '-22px',
             left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-            width: '90%',
-            pointerEvents: 'none',
-            zIndex: 5
+            transform: 'translateX(-50%)',
+            width: '32px',
+            height: '22px',
+            background: 'linear-gradient(to right, #94a3b8, #e2e8f0, #94a3b8)',
+            borderTopLeftRadius: '4px',
+            borderTopRightRadius: '4px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
-            <h2 style={{
-              color: '#fff',
-              textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6)',
-              margin: 0,
-              fontSize: '1.8rem',
-              fontWeight: 800,
-              letterSpacing: '1px',
-              fontFamily: 'Montserrat, sans-serif'
-            }}>{design.business_name.toUpperCase()}</h2>
-            {design.bottle_text && (
-              <p style={{
-                color: '#fff',
-                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-                margin: '4px 0 0 0',
-                fontSize: '1rem',
-                fontFamily: 'Inter, sans-serif',
-                opacity: 0.9
-              }}>{design.bottle_text}</p>
+            {/* Cap Ridges */}
+            <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.1)', marginTop: '2px' }}></div>
+            <div style={{ width: '100%', height: '4px', background: 'rgba(0,0,0,0.1)', marginTop: '2px' }}></div>
+          </div>
+          
+          {/* Water level effect */}
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '2px',
+            right: '2px',
+            height: '2px',
+            background: 'rgba(255,255,255,0.6)',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          }}></div>
+
+          {/* The Label Wrap */}
+          <div style={{
+            position: 'absolute',
+            top: '50px',
+            left: '0',
+            right: '0',
+            height: '110px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.15), 0 -2px 6px rgba(0,0,0,0.05)',
+            background: '#fff'
+          }}>
+            <img 
+              src={design.preview_url} 
+              alt={design.name} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={(e) => { e.target.src = "/placeholder.png"; }} 
+            />
+            
+            {/* Dynamic Text Overlay on the Label */}
+            {design.business_name && (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center',
+                width: '100%',
+                pointerEvents: 'none',
+                zIndex: 5
+              }}>
+                <h2 style={{
+                  color: '#fff',
+                  textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)',
+                  margin: 0,
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  lineHeight: '1.1',
+                  fontFamily: 'Montserrat, sans-serif'
+                }}>{design.business_name.toUpperCase()}</h2>
+                {design.bottle_text && (
+                  <p style={{
+                    color: '#fff',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                    margin: '2px 0 0 0',
+                    fontSize: '0.5rem',
+                    fontFamily: 'Inter, sans-serif',
+                    opacity: 0.9
+                  }}>{design.bottle_text}</p>
+                )}
+              </div>
             )}
           </div>
-        )}
+          
+          {/* Glass Glare Highlight */}
+          <div style={{
+            position: 'absolute',
+            top: '0',
+            bottom: '0',
+            left: '15%',
+            width: '12%',
+            background: 'linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.6), rgba(255,255,255,0))',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            top: '0',
+            bottom: '0',
+            right: '8%',
+            width: '4%',
+            background: 'linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.3), rgba(255,255,255,0))',
+            zIndex: 10,
+            pointerEvents: 'none'
+          }}></div>
+        </div>
 
         {/* Star/Save button */}
         <button 
