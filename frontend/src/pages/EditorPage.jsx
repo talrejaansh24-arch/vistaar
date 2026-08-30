@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Canvas, FabricImage, Rect, Textbox, Circle, Path, Polygon, Triangle } from 'fabric';
+import { Canvas, FabricImage, Rect, Textbox, Circle, Path, Polygon, Triangle, PencilBrush } from 'fabric';
 import useStore from '../store/useStore';
 import { authAPI, designAPI, API_ORIGIN, resolveAssetUrl } from '../api/client';
 import { 
   RotateCcw, Undo2, Redo2, Trash2, Sliders, Layers, FlipHorizontal, Copy,
   LayoutTemplate, Type, Palette, UploadCloud, Square, Images, Video, QrCode, PlayCircle, Code, Share2, Save, Download, Printer,
-  Eye, Edit3
+  Eye, Edit3, PenTool, Brush
 } from 'lucide-react';
 import gsap from 'gsap';
 import BottlePreview from '../components/BottlePreview';
@@ -61,10 +61,26 @@ export default function EditorPage() {
   const [activeFontFamily, setActiveFontFamily] = useState('Outfit, sans-serif');
   const [previewMode, setPreviewMode] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
+  
+  // Paint tool state
+  const [isDrawingMode, setIsDrawingMode] = useState(false);
+  const [brushColor, setBrushColor] = useState('#ffffff');
+  const [brushWidth, setBrushWidth] = useState(5);
 
   const historyRef = useRef({ stack: [], index: -1 });
   const isUndoingRedoing = useRef(false);
   const canvasDisposedRef = useRef(false);
+
+  useEffect(() => {
+    if (fabricRef.current) {
+      fabricRef.current.isDrawingMode = isDrawingMode;
+      if (isDrawingMode) {
+        fabricRef.current.freeDrawingBrush = new PencilBrush(fabricRef.current);
+        fabricRef.current.freeDrawingBrush.color = brushColor;
+        fabricRef.current.freeDrawingBrush.width = brushWidth;
+      }
+    }
+  }, [isDrawingMode, brushColor, brushWidth]);
 
   const saveHistoryState = () => {
     const canvas = fabricRef.current;
@@ -2684,43 +2700,47 @@ if __name__ == "__main__":
 
       <div className="studio-shell">
         <aside className="studio-navbar">
-          <button className={`nav-tab ${activeTool === 'templates' ? 'active' : ''}`} onClick={() => setActiveTool('templates')}>
+          <button className={`nav-tab ${activeTool === 'templates' ? 'active' : ''}`} onClick={() => { setActiveTool('templates'); setIsDrawingMode(false); }}>
             <LayoutTemplate size={20} />
             <span>Templates</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'text' ? 'active' : ''}`} onClick={() => setActiveTool('text')}>
+          <button className={`nav-tab ${activeTool === 'text' ? 'active' : ''}`} onClick={() => { setActiveTool('text'); setIsDrawingMode(false); }}>
             <Type size={20} />
             <span>Text</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'background' ? 'active' : ''}`} onClick={() => setActiveTool('background')}>
+          <button className={`nav-tab ${activeTool === 'background' ? 'active' : ''}`} onClick={() => { setActiveTool('background'); setIsDrawingMode(false); }}>
             <Palette size={20} />
             <span>Background</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'logo' ? 'active' : ''}`} onClick={() => setActiveTool('logo')}>
+          <button className={`nav-tab ${activeTool === 'logo' ? 'active' : ''}`} onClick={() => { setActiveTool('logo'); setIsDrawingMode(false); }}>
             <UploadCloud size={20} />
             <span>Logo</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'shape' ? 'active' : ''}`} onClick={() => setActiveTool('shape')}>
+          <button className={`nav-tab ${activeTool === 'shape' ? 'active' : ''}`} onClick={() => { setActiveTool('shape'); setIsDrawingMode(false); }}>
             <Square size={20} />
             <span>Shape</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'images' ? 'active' : ''}`} onClick={() => setActiveTool('images')}>
+          <button className={`nav-tab ${activeTool === 'images' ? 'active' : ''}`} onClick={() => { setActiveTool('images'); setIsDrawingMode(false); }}>
             <Images size={20} />
             <span>Images</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'videos' ? 'active' : ''}`} onClick={() => setActiveTool('videos')}>
+          <button className={`nav-tab ${activeTool === 'videos' ? 'active' : ''}`} onClick={() => { setActiveTool('videos'); setIsDrawingMode(false); }}>
             <Video size={20} />
             <span>Videos</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'qrcode' ? 'active' : ''}`} onClick={() => setActiveTool('qrcode')}>
+          <button className={`nav-tab ${activeTool === 'qrcode' ? 'active' : ''}`} onClick={() => { setActiveTool('qrcode'); setIsDrawingMode(false); }}>
             <QrCode size={20} />
             <span>QR Code</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'animate' ? 'active' : ''}`} onClick={() => setActiveTool('animate')}>
+          <button className={`nav-tab ${activeTool === 'paint' ? 'active' : ''}`} onClick={() => { setActiveTool('paint'); setIsDrawingMode(true); }}>
+            <Brush size={20} />
+            <span>Paint</span>
+          </button>
+          <button className={`nav-tab ${activeTool === 'animate' ? 'active' : ''}`} onClick={() => { setActiveTool('animate'); setIsDrawingMode(false); }}>
             <PlayCircle size={20} />
             <span>Animate</span>
           </button>
-          <button className={`nav-tab ${activeTool === 'code' ? 'active' : ''}`} onClick={() => setActiveTool('code')}>
+          <button className={`nav-tab ${activeTool === 'code' ? 'active' : ''}`} onClick={() => { setActiveTool('code'); setIsDrawingMode(false); }}>
             <Code size={20} />
             <span>Code Export</span>
           </button>
@@ -2912,6 +2932,44 @@ if __name__ == "__main__":
               <button className="btn btn-primary btn-sm w-full mt-2" onClick={addQrCode}>
                 Insert QR Code
               </button>
+            </div>
+          )}
+
+          {activeTool === 'paint' && (
+            <div className="left-panel-section">
+              <h3>Paint Mode</h3>
+              <p className="assistant-note">Draw directly on your label using freehand brush strokes (like MS Paint).</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={isDrawingMode} onChange={(e) => setIsDrawingMode(e.target.checked)} />
+                  <span style={{ fontWeight: 'bold' }}>Enable Paint Brush</span>
+                </label>
+                
+                {isDrawingMode && (
+                  <>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem' }}>Brush Color</label>
+                      <input 
+                        type="color" 
+                        value={brushColor}
+                        onChange={(e) => setBrushColor(e.target.value)}
+                        style={{ width: '100%', height: '40px', cursor: 'pointer' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '0.5rem' }}>Brush Size: {brushWidth}px</label>
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="50" 
+                        value={brushWidth}
+                        onChange={(e) => setBrushWidth(Number(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
