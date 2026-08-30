@@ -138,7 +138,7 @@ export default function DesignCard({ design }) {
             <img 
               src={design.preview_url} 
               alt={design.name} 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', color: 'transparent', backgroundColor: '#e2e8f0' }}
               onError={(e) => { e.target.src = "/placeholder.png"; }} 
             />
             
