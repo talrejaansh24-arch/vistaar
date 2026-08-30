@@ -866,3 +866,129 @@
     font-size: 0.75rem;
   }
 }
+
+
+/* Enhancements for Canva-like minimal look */
+.editor-page.canva-mode {
+  background-color: #f3f4f6; /* Lighter background like Canva */
+  color: #1f2937; /* Darker text for light mode */
+}
+
+.studio-shell {
+  display: grid;
+  grid-template-columns: 80px 320px 1fr;
+  height: calc(100vh - 64px);
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.studio-navbar {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  padding-top: 1rem;
+}
+
+.nav-tab {
+  color: #6b7280;
+  border-radius: 8px;
+  margin: 4px 8px;
+}
+
+.nav-tab:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.nav-tab.active {
+  background: #eef2ff;
+  color: #4f46e5;
+  border: none;
+}
+
+.tool-drawer {
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 4px 0 15px rgba(0,0,0,0.02);
+}
+
+.tool-drawer h3 {
+  color: #111827;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.tool-drawer label {
+  color: #4b5563;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.tool-drawer .input {
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #111827;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.studio-center {
+  padding: 2rem;
+  background: #f3f4f6;
+}
+
+.workspace-toolbar {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.workspace-content {
+  background: transparent;
+}
+
+.canvas-stage {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
+.preview-3d-container {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
+/* Fix sticky buttons */
+.action-btn {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid transparent;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+}
+.action-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.editor-footer-bar {
+  margin-top: 1.5rem;
+  gap: 1rem;
+}
+
+.footer-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
