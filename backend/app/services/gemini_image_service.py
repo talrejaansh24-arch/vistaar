@@ -142,8 +142,9 @@ def generate_ai_designs(
         encoded_prompt = urllib.parse.quote(full_prompt)
         seed = int(time.time() * 1000) + i
         
-        # Reduce width/height slightly for faster loading
-        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true&seed={seed}"
+        # Wrap the image URL in wsrv.nl proxy to heavily cache it and prevent 429 frontend rate limits
+        raw_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=512&height=512&nologo=true&seed={seed}"
+        image_url = f"https://wsrv.nl/?url={urllib.parse.quote(raw_url)}&maxage=30d"
             
         designs.append({
             "id": f"ai_{uuid.uuid4().hex[:8]}",
