@@ -139,7 +139,7 @@ export default function DesignCard({ design }) {
               src={design.preview_url} 
               alt={design.name} 
               style={{ width: '100%', height: '100%', objectFit: 'cover', color: 'transparent', backgroundColor: '#e2e8f0' }}
-              onError={(e) => { e.target.src = "/placeholder.png"; }} 
+              onError={(e) => { e.target.style.opacity = 0; }} onLoad={(e) => { e.target.style.opacity = 1; }} 
             />
             
             {/* Dynamic Text Overlay on the Label */}

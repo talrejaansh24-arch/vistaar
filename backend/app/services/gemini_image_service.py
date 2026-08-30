@@ -119,7 +119,7 @@ def generate_ai_designs(
     style: str = "modern",
     enhance_prompt: bool = True,
 ) -> list[dict]:
-    safe_count = max(1, min(count, 4))
+    safe_count = max(1, min(count, 12))
     
     # Enhance prompt for better image quality
     effective_prompt = prompt

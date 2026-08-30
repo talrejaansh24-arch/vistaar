@@ -870,65 +870,65 @@
 
 /* Enhancements for Canva-like minimal look */
 .editor-page.canva-mode {
-  background-color: #f3f4f6; /* Lighter background like Canva */
-  color: #1f2937; /* Darker text for light mode */
+  background-color: #0f172a; /* Lighter background like Canva */
+  color: #f1f5f9; /* Darker text for light mode */
 }
 
 .studio-shell {
   display: grid;
   grid-template-columns: 80px 320px 1fr 280px;
   height: calc(100vh - 64px);
-  background: #f3f4f6;
-  color: #1f2937;
+  background: #0f172a;
+  color: #f1f5f9;
 }
 
 .studio-navbar {
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  background: #1e293b;
+  border-right: 1px solid #334155;
   padding-top: 1rem;
 }
 
 .nav-tab {
-  color: #6b7280;
+  color: #94a3b8;
   border-radius: 8px;
   margin: 4px 8px;
 }
 
 .nav-tab:hover {
-  background: #f3f4f6;
-  color: #111827;
+  background: #0f172a;
+  color: #f8fafc;
 }
 
 .nav-tab.active {
-  background: #eef2ff;
+  background: #334155;
   color: #4f46e5;
   border: none;
 }
 
 .tool-drawer {
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  background: #1e293b;
+  border-right: 1px solid #334155;
   padding: 1.5rem;
   box-shadow: 4px 0 15px rgba(0,0,0,0.02);
 }
 
 .tool-drawer h3 {
-  color: #111827;
+  color: #f8fafc;
   font-weight: 600;
   margin-bottom: 1.5rem;
   font-size: 1.25rem;
 }
 
 .tool-drawer label {
-  color: #4b5563;
+  color: #cbd5e1;
   font-weight: 500;
   margin-bottom: 0.5rem;
 }
 
 .tool-drawer .input {
-  background: #f9fafb;
-  border: 1px solid #d1d5db;
-  color: #111827;
+  background: #0f172a;
+  border: 1px solid #475569;
+  color: #f8fafc;
   padding: 0.75rem 1rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
@@ -936,16 +936,16 @@
 
 .studio-center {
   padding: 2rem;
-  background: #f3f4f6;
+  background: #0f172a;
 }
 
 .workspace-toolbar {
-  background: #ffffff;
+  background: #1e293b;
   border-radius: 12px;
   padding: 0.75rem 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  border: 1px solid #334155;
 }
 
 .workspace-content {
@@ -953,33 +953,33 @@
 }
 
 .canvas-stage {
-  background: #ffffff;
+  background: #1e293b;
   border-radius: 12px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   padding: 2rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #334155;
 }
 
 .preview-3d-container {
-  background: #ffffff;
+  background: #1e293b;
   border-radius: 12px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   padding: 2rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #334155;
 }
 
 /* Fix sticky buttons */
 .action-btn {
-  background: #f3f4f6;
-  color: #4b5563;
+  background: #0f172a;
+  color: #cbd5e1;
   border: 1px solid transparent;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   margin-right: 0.5rem;
 }
 .action-btn:hover {
-  background: #e5e7eb;
-  color: #111827;
+  background: #475569;
+  color: #f8fafc;
 }
 
 .editor-footer-bar {
