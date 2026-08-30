@@ -107,6 +107,9 @@ def _normalize_prompt(prompt: str, business_name: str, detail: str, category: st
         "DO NOT output markdown formatting like ```json ... ```, just the raw JSON array."
     )
 
+import urllib.parse
+import uuid
+
 def generate_ai_designs(
     prompt: str,
     business_name: str,
@@ -116,96 +119,41 @@ def generate_ai_designs(
     style: str = "modern",
     enhance_prompt: bool = True,
 ) -> list[dict]:
-    if not GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY is missing on the server.")
-
     safe_count = max(1, min(count, 4))
-
-    # Optionally enhance the user's prompt before mapping to templates
+    
+    # Enhance prompt for better image quality
     effective_prompt = prompt
-    if enhance_prompt:
-        effective_prompt = enhance_user_prompt(prompt)
+    if enhance_prompt and GEMINI_API_KEY:
+        try:
+            effective_prompt = enhance_user_prompt(prompt)
+        except:
+            pass
+
+    designs = []
+    import time
     
-    # We use gemini-1.5-flash text model instead of image model due to quota limits,
-    # and instead map the prompt to our existing generative templates in design_engine.py
-    model_name = "gemini-1.5-flash"
-    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
-    
-    request_body = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": _normalize_prompt(effective_prompt, business_name, detail, category, style)}
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.45,
-            "responseMimeType": "application/json"
-        },
-    }
-
-    try:
-        req = request.Request(
-            endpoint,
-            method="POST",
-            data=json.dumps(request_body).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-        )
-        with request.urlopen(req, timeout=30) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-            
-        candidates = payload.get("candidates", [])
-        if not candidates:
-            raise ValueError("No response from Gemini API.")
-            
-        text_response = candidates[0]["content"]["parts"][0]["text"].strip()
+    # Generate actual unique images via a reliable AI image API (Pollinations as robust zero-error generator)
+    # The prompt incorporates the business name and category to ensure a tailored design.
+    for i in range(safe_count):
+        # We add some variation to the prompt to ensure unique images
+        variation = ["masterpiece", "highly detailed", "premium lighting", "hyperrealistic"][i % 4]
+        full_prompt = f"A product packaging label design for {category} named '{business_name}'. {effective_prompt}. Style: {style}. {variation}, professional design."
         
-        # Clean any accidental markdown markdown JSON formatting
-        if text_response.startswith("```json"):
-            text_response = text_response[7:]
-        if text_response.endswith("```"):
-            text_response = text_response[:-3]
-            
-        extracted_data = json.loads(text_response.strip())
+        encoded_prompt = urllib.parse.quote(full_prompt)
+        # Append a unique seed so we get distinct images per iteration
+        seed = int(time.time() * 1000) + i
+        image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true&seed={seed}"
         
-        if not isinstance(extracted_data, list):
-            extracted_data = [extracted_data]
-            
-        designs = []
-        for i, data in enumerate(extracted_data[:safe_count]):
-            # Use generate_designs to create the actual image based on the chosen template
-            fallback_res = generate_designs(
-                business_name=data.get("business_name", business_name).upper()[:15],
-                bottle_text=data.get("bottle_text", "Premium Water")[:20],
-                category=data.get("category", category),
-                bottle_size="500ml",
-                style=data.get("style", style),
-                count=1, # Generate 1 per template
-                force_template=data.get("template_name")
-            )
-            if fallback_res:
-                generated = fallback_res[0]
-                generated["name"] = f"AI Concept {i + 1} - {data.get('template_name', 'Custom')}"
-                designs.append(generated)
-                
-        if designs:
-            return designs
-
-    except Exception as exc:
-        print(f"Gemini API Text Error: {exc}")
-        # Fallback if parsing or API fails
-        pass
-
-    # Graceful fallback so Studio remains functional
-    fallback = generate_designs(
-        business_name=business_name or "VISTAARWATER",
-        bottle_text=effective_prompt[:34] or "Premium Water",
-        category=category or "general",
-        bottle_size="500ml",
-        style=style or "modern",
-        count=safe_count,
-    )
-    if fallback:
-        return fallback
-    raise ValueError("Gemini failed and fallback failed.")
+        designs.append({
+            "id": f"ai_{uuid.uuid4().hex[:8]}",
+            "name": f"AI Concept {i + 1} - {business_name}",
+            "preview_url": image_url,
+            "base_image_url": image_url, # Allow importing into Editor as background
+            "style": style,
+            "colors": ["#ffffff", "#000000"],
+            "business_name": business_name,
+            "bottle_text": prompt[:30],
+            "template_id": None
+        })
+        
+    return designs

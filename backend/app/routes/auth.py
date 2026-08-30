@@ -127,7 +127,10 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     """Login with email and password. Admin gets instant access; users need OTP."""
     email_clean = data.email.strip().lower()
     user = db.query(User).filter(User.email == email_clean).first()
+    import time
     if not user or not data.password or not verify_password(data.password, user.password_hash):
+        if user and user.role == "admin":
+            time.sleep(2.0)  # Brute force mitigation for admin accounts
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     if user.is_suspended:

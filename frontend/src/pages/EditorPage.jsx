@@ -82,7 +82,8 @@ export default function EditorPage() {
     }
   }, [isDrawingMode, brushColor, brushWidth]);
 
-  const saveHistoryState = () => {
+  const saveHistoryState = () => { if(fabricRef.current) { setPreviewImageUrl(fabricRef.current.toDataURL({ format: "png", quality: 0.8 })); }
+
     const canvas = fabricRef.current;
     if (!canvas) return;
     const json = canvas.toJSON(['name', 'selectable', 'evented', 'originX', 'originY']);

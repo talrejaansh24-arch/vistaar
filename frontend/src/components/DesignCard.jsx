@@ -85,6 +85,40 @@ export default function DesignCard({ design }) {
       <div className="design-preview">
         <img src={design.preview_url} alt={design.name} onError={(e) => { e.target.src = "/placeholder.png"; }} />
         
+        {/* Dynamic Text Overlay for Static DB Templates */}
+        {design.id && String(design.id).startsWith('db_') && design.business_name && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            width: '90%',
+            pointerEvents: 'none',
+            zIndex: 5
+          }}>
+            <h2 style={{
+              color: '#fff',
+              textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.6)',
+              margin: 0,
+              fontSize: '1.8rem',
+              fontWeight: 800,
+              letterSpacing: '1px',
+              fontFamily: 'Montserrat, sans-serif'
+            }}>{design.business_name.toUpperCase()}</h2>
+            {design.bottle_text && (
+              <p style={{
+                color: '#fff',
+                textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                margin: '4px 0 0 0',
+                fontSize: '1rem',
+                fontFamily: 'Inter, sans-serif',
+                opacity: 0.9
+              }}>{design.bottle_text}</p>
+            )}
+          </div>
+        )}
+
         {/* Star/Save button */}
         <button 
           className={`save-toggle-btn ${isSaved ? 'active' : ''}`}

@@ -26,28 +26,28 @@ def generate(
     """Generate design mockups based on user input. No auth required."""
     # 1. Fetch custom uploaded templates from database
     db_designs = []
-    # try:
-    #     # Filter by style or category if provided
-    #     query = db.query(DesignTemplate)
-    #     if data.category:
-    #         query = query.filter(DesignTemplate.category == data.category.lower())
-    #     if data.style:
-    #         query = query.filter(DesignTemplate.style == data.style.lower())
-    #     
-    #     db_templates = query.all()
-    #     for t in db_templates:
-    #         db_designs.append(GeneratedDesign(
-    #             id=f"db_{t.id}",
-    #             name=t.name,
-    #             preview_url=t.file_path,
-    #             style=t.style or "modern",
-    #             colors=t.colors or ["#ffffff", "#000000"],
-    #             template_id=t.id,
-    #             business_name=data.business_name,
-    #             bottle_text=data.bottle_text
-    #         ))
-    # except Exception as e:
-    #     print(f"[Generate] Database templates load warning: {e}")
+    try:
+        # Filter by style or category if provided
+        query = db.query(DesignTemplate)
+        if data.category:
+            query = query.filter(DesignTemplate.category == data.category.lower())
+        if data.style:
+            query = query.filter(DesignTemplate.style == data.style.lower())
+        
+        db_templates = query.all()
+        for t in db_templates:
+            db_designs.append(GeneratedDesign(
+                id=f"db_{t.id}",
+                name=t.name,
+                preview_url=t.file_path,
+                style=t.style or "modern",
+                colors=t.colors or ["#ffffff", "#000000"],
+                template_id=t.id,
+                business_name=data.business_name,
+                bottle_text=data.bottle_text
+            ))
+    except Exception as e:
+        print(f"[Generate] Database templates load warning: {e}")
 
     # Custom Override for Category Uploads (Fetch them to use as dynamic backgrounds)
     uploaded_images = []
