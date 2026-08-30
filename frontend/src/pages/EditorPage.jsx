@@ -5,9 +5,11 @@ import useStore from '../store/useStore';
 import { authAPI, designAPI, API_ORIGIN, resolveAssetUrl } from '../api/client';
 import { 
   RotateCcw, Undo2, Redo2, Trash2, Sliders, Layers, FlipHorizontal, Copy,
-  LayoutTemplate, Type, Palette, UploadCloud, Square, Images, Video, QrCode, PlayCircle, Code, Share2, Save, Download, Printer
+  LayoutTemplate, Type, Palette, UploadCloud, Square, Images, Video, QrCode, PlayCircle, Code, Share2, Save, Download, Printer,
+  Eye, Edit3
 } from 'lucide-react';
 import gsap from 'gsap';
+import BottlePreview from '../components/BottlePreview';
 import './EditorPage.css';
 
 const BOTTLE_SIZES = [
@@ -57,6 +59,8 @@ export default function EditorPage() {
   const [templateSearchQuery, setTemplateSearchQuery] = useState('');
   const [qrText, setQrText] = useState('https://vistaarwater.co');
   const [activeFontFamily, setActiveFontFamily] = useState('Outfit, sans-serif');
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState(null);
 
   const historyRef = useRef({ stack: [], index: -1 });
   const isUndoingRedoing = useRef(false);
@@ -3029,8 +3033,38 @@ if __name__ == "__main__":
               </div>
             </div>
 
-            <div className="canvas-stage">
-              <canvas ref={canvasElRef} />
+            <div className="canvas-stage" style={{ position: 'relative' }}>
+              <div className="preview-toggle" style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10, display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  className={`action-btn ${!previewMode ? 'active' : ''}`} 
+                  onClick={() => setPreviewMode(false)}
+                  style={{ background: !previewMode ? 'rgba(85, 239, 196, 0.2)' : 'rgba(255,255,255,0.1)' }}
+                >
+                  <Edit3 size={16} /> 2D Editor
+                </button>
+                <button 
+                  className={`action-btn ${previewMode ? 'active' : ''}`} 
+                  onClick={() => {
+                    if (fabricRef.current) {
+                      setPreviewImageUrl(fabricRef.current.toDataURL({ format: 'png', quality: 1 }));
+                    }
+                    setPreviewMode(true);
+                  }}
+                  style={{ background: previewMode ? 'rgba(85, 239, 196, 0.2)' : 'rgba(255,255,255,0.1)' }}
+                >
+                  <Eye size={16} /> 3D Preview
+                </button>
+              </div>
+              
+              <div style={{ display: previewMode ? 'none' : 'block' }}>
+                <canvas ref={canvasElRef} />
+              </div>
+              
+              {previewMode && (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BottlePreview labelImage={previewImageUrl} bottleSize={activeSize} />
+                </div>
+              )}
             </div>
 
             {/* Image 3 Workspace Footer */}
