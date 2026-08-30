@@ -83,7 +83,7 @@ export default function DesignCard({ design }) {
   return (
     <div className="design-card card" ref={cardRef} onClick={handleCustomize} style={{ cursor: 'pointer', position: 'relative' }}>
       <div className="design-preview">
-        <img src={design.preview_url} alt={design.name} />
+        <img src={design.preview_url} alt={design.name} onError={(e) => { e.target.src = " /placeholder.png\; }} />
         
         {/* Star/Save button */}
         <button 

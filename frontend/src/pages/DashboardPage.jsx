@@ -190,7 +190,7 @@ export default function DashboardPage() {
                               return (
                                 <div key={item.id} className="order-item-row">
                                   <div className="item-preview-img">
-                                    <img src={resolveAssetUrl(item.design_preview_url || prod.image_url)} alt={prod.name} />
+                                    <img src={resolveAssetUrl(item.design_preview_url || prod.image_url)} alt={prod.name} onError={(e) => { e.target.src = " /placeholder.png\; }} />
                                   </div>
                                   <div className="item-row-info">
                                     <h5>{prod.name}</h5>
@@ -235,7 +235,7 @@ export default function DashboardPage() {
                       {savedDesigns.map((d) => (
                         <div key={d.id} className="saved-design-show-card glass" onClick={() => handleCustomize(d)}>
                           <div className="saved-preview-wrapper">
-                            {d.preview_url && <img src={resolveAssetUrl(d.preview_url)} alt={d.name} />}
+                            {d.preview_url && <img src={resolveAssetUrl(d.preview_url)} alt={d.name} onError={(e) => { e.target.src = \/placeholder.png\; }} />}
                             <div className="saved-design-hover-overlay">
                               <button className="action-circle-btn customize-action" title="Customize Design">
                                 <PenTool size={16} />
