@@ -27,7 +27,7 @@ def _file_path_to_url(file_path: str) -> str:
     return f"{STATIC_BASE_URL}/{p.name}"
 
 
-def run_generation(variants_per_combo: int = 3):
+def run_generation(variants_per_combo: int = 15):
     """Generate all designs and upsert into DB."""
     logger.info("[design_worker] Starting daily label design generation...")
     start = datetime.utcnow()

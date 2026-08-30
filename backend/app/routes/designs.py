@@ -37,16 +37,15 @@ def generate(
         .all()
     )
 
-    # On-the-fly generation fallback: If no templates exist for this combo, generate 3 instantly!
+    # On-the-fly generation fallback: If no templates exist for this combo, generate 15 instantly!
     if not templates:
         try:
-            from app.services.design_painter import generate_label_design, PALETTES
-            palette_list = PALETTES.get(category, PALETTES["general"]).get(style, PALETTES["general"]["modern"])
+            from app.services.design_painter import generate_label_design, get_expanded_palette
             
-            # Generate 3 variants on-the-fly and save to DB
-            for v in range(min(3, len(palette_list))):
+            # Generate 15 variants on-the-fly and save to DB
+            for v in range(15):
                 path = generate_label_design(category, style, v)
-                bg_hex, accent_hex, border_hex = palette_list[v % len(palette_list)]
+                bg_hex, accent_hex, border_hex = get_expanded_palette(category, style, v)
                 name = f"{category.title()} {style.title()} #{v + 1}"
                 file_url = f"/static/generated/label_{category}_{style}_{v}.png"
                 
@@ -72,7 +71,7 @@ def generate(
         templates = (
             db.query(DesignTemplate)
             .filter(DesignTemplate.category == "general")
-            .limit(3)
+            .limit(15)
             .all()
         )
 
@@ -172,12 +171,11 @@ def generate_template(
     # On-the-fly fallback if templates for search category aren't in DB yet
     if not templates:
         try:
-            from app.services.design_painter import generate_label_design, PALETTES
+            from app.services.design_painter import generate_label_design, get_expanded_palette
             style = "modern"
-            palette_list = PALETTES.get(category, PALETTES["general"]).get(style, PALETTES["general"]["modern"])
-            for v in range(min(3, len(palette_list))):
+            for v in range(15):
                 generate_label_design(category, style, v)
-                bg_hex, accent_hex, border_hex = palette_list[v % len(palette_list)]
+                bg_hex, accent_hex, border_hex = get_expanded_palette(category, style, v)
                 name = f"{category.title()} {style.title()} #{v + 1}"
                 file_url = f"/static/generated/label_{category}_{style}_{v}.png"
                 

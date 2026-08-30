@@ -96,6 +96,58 @@ def _lerp_color(c1: tuple, c2: tuple, t: float) -> tuple[int, int, int]:
     return tuple(int(c1[i] + (c2[i] - c1[i]) * t) for i in range(3))  # type: ignore
 
 
+def get_expanded_palette(category: str, style: str, variant: int) -> tuple[str, str, str]:
+    """
+    Generate at least 15 distinct, beautiful color variations deterministically.
+    Uses HSV shifting from the base palettes list to ensure perfect harmony.
+    """
+    import colorsys
+    base_list = PALETTES.get(category, PALETTES["general"]).get(style, PALETTES["general"]["modern"])
+    base_idx = variant % len(base_list)
+    bg_hex, accent_hex, border_hex = base_list[base_idx]
+    
+    if variant < len(base_list):
+        return bg_hex, accent_hex, border_hex
+        
+    def hex_to_hsv(h):
+        h = h.lstrip('#')
+        rgb = tuple(int(h[i:i+2], 16)/255.0 for i in (0, 2, 4))
+        return colorsys.rgb_to_hsv(*rgb)
+        
+    def hsv_to_hex(h, s, v):
+        rgb = colorsys.hsv_to_rgb(h, s, v)
+        return '#' + ''.join(f"{max(0, min(255, int(c*255))):02x}" for c in rgb)
+
+    # Use seed to ensure reproducible palette shades per variant index
+    rng = random.Random(f"{category}_{style}_{variant}")
+    
+    bg_h, bg_s, bg_v = hex_to_hsv(bg_hex)
+    ac_h, ac_s, ac_v = hex_to_hsv(accent_hex)
+    br_h, br_s, br_v = hex_to_hsv(border_hex)
+    
+    mode = variant % 4
+    
+    if mode == 0:
+        # Subtle Jitter (analogous shades)
+        bg_h = (bg_h + rng.uniform(-0.06, 0.06)) % 1.0
+        ac_h = (ac_h + rng.uniform(-0.06, 0.06)) % 1.0
+        br_h = (br_h + rng.uniform(-0.06, 0.06)) % 1.0
+    elif mode == 1:
+        # High Saturation / Neon shades
+        bg_s = max(0.1, min(1.0, bg_s + rng.uniform(-0.15, 0.15)))
+        ac_s = max(0.4, min(1.0, ac_s + 0.2))
+        br_s = max(0.4, min(1.0, br_s + 0.2))
+    elif mode == 2:
+        # Darker / Deeper background values
+        bg_v = max(0.04, min(0.3, bg_v - 0.15))
+        ac_v = max(0.5, min(0.95, ac_v + 0.1))
+    else:
+        # Colors swap: background gets accent tone, accent gets bg tone
+        bg_h, bg_s, bg_v, ac_h, ac_s, ac_v = ac_h, ac_s, ac_v, bg_h, bg_s, bg_v
+        
+    return hsv_to_hex(bg_h, bg_s, bg_v), hsv_to_hex(ac_h, ac_s, ac_v), hsv_to_hex(br_h, br_s, br_v)
+
+
 # ────────────────────────────────────────────────────────────────
 # Layer painters
 # ────────────────────────────────────────────────────────────────
@@ -344,8 +396,7 @@ def generate_label_design(category: str, style: str, variant: int = 0, out_path:
     Returns the absolute file path.
     """
     rng = _daily_rng(category, style, variant)
-    palette_list = PALETTES.get(category, PALETTES["general"]).get(style, PALETTES["general"]["modern"])
-    bg_hex, accent_hex, border_hex = palette_list[variant % len(palette_list)]
+    bg_hex, accent_hex, border_hex = get_expanded_palette(category, style, variant)
 
     bg     = _hex_to_rgb(bg_hex)
     accent = _hex_to_rgb(accent_hex)
@@ -424,8 +475,7 @@ def generate_all_designs(variants_per_combo: int = 3) -> list[dict]:
         for sty in styles:
             for v in range(variants_per_combo):
                 path = generate_label_design(cat, sty, v)
-                palette_list = PALETTES.get(cat, PALETTES["general"]).get(sty, PALETTES["general"]["modern"])
-                bg_hex, accent_hex, border_hex = palette_list[v % len(palette_list)]
+                bg_hex, accent_hex, border_hex = get_expanded_palette(cat, sty, v)
                 results.append({
                     "category":  cat,
                     "style":     sty,
