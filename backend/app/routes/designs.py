@@ -77,17 +77,47 @@ def generate(
         )
 
     designs_out: list[GeneratedDesign] = []
+    import hashlib, os
+    from app.services.design_painter import draw_text_on_label
+    
+    static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "static", "generated")
+    os.makedirs(static_dir, exist_ok=True)
+
     for tpl in templates:
+        flat_relative_path = tpl.file_path
+        filename = flat_relative_path.split("/")[-1]
+        flat_abs_path = os.path.join(static_dir, filename)
+        
+        # Unique cached preview file based on user input
+        brand_clean = (data.business_name or "YOUR BRAND").strip()
+        tag_clean = (data.bottle_text or "").strip()
+        pref_hash = hashlib.md5(f"{brand_clean}_{tag_clean}".encode()).hexdigest()[:8]
+        preview_filename = f"prev_{tpl.category}_{tpl.style}_{tpl.id}_{pref_hash}.png"
+        preview_abs_path = os.path.join(static_dir, preview_filename)
+        preview_relative_url = f"/static/generated/{preview_filename}"
+        
+        # If flat background exists locally, bake text on the fly (takes ~5ms)
+        if os.path.exists(flat_abs_path) and not os.path.exists(preview_abs_path):
+            try:
+                text_color = tpl.colors[1] if (tpl.colors and len(tpl.colors) > 1) else "#ffffff"
+                draw_text_on_label(flat_abs_path, preview_abs_path, brand_clean, tag_clean, text_color)
+            except Exception as e:
+                print(f"Error drawing preview text: {e}")
+                preview_relative_url = tpl.file_path
+        elif not os.path.exists(flat_abs_path):
+            # Fallback if flat template not generated yet
+            preview_relative_url = tpl.file_path
+
         designs_out.append(GeneratedDesign(
             id=f"tpl_{tpl.id}",
-            name=f"{tpl.name} – {data.business_name or 'YOUR BRAND'}",
-            preview_url=tpl.file_path,
+            name=f"{tpl.name} – {brand_clean}",
+            preview_url=preview_relative_url,
             base_image_url=tpl.file_path,
             style=tpl.style or style,
             colors=tpl.colors or ["#ffffff", "#000000"],
             template_id=tpl.id,
-            business_name=data.business_name or "YOUR BRAND",
-            bottle_text=data.bottle_text or "",
+            business_name=brand_clean,
+            bottle_text=tag_clean,
         ))
 
     return DesignGenerateResponse(designs=designs_out, count=len(designs_out))

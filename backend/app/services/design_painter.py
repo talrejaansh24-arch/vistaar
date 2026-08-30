@@ -76,9 +76,9 @@ PALETTES: dict[str, dict[str, list[tuple]]] = {
 }
 
 # ────────────────────────────────────────────────────────────────
-# Canvas constants - 2048x2048 ensures crisp, high-res 4K labels
+# Canvas constants - 1024x1024 is the perfect balance of 4K sharpness and ultra-fast load speed
 # ────────────────────────────────────────────────────────────────
-W, H = 2048, 2048
+W, H = 1024, 1024
 
 
 def _daily_rng(category: str, style: str, variant: int) -> random.Random:
@@ -135,8 +135,8 @@ def _paint_geometric(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rn
         alpha = rng.randint(20, 60)
         color_with_alpha = accent + (alpha,)
         shape = rng.choice(["rect", "ellipse", "triangle"])
-        x0, y0 = rng.randint(-200, W), rng.randint(-200, H)
-        x1, y1 = x0 + rng.randint(200, 900), y0 + rng.randint(200, 900)
+        x0, y0 = rng.randint(-100, W), rng.randint(-100, H)
+        x1, y1 = x0 + rng.randint(100, 450), y0 + rng.randint(100, 450)
         if shape == "rect":
             draw.rectangle([x0, y0, x1, y1], fill=color_with_alpha)
         elif shape == "ellipse":
@@ -148,12 +148,12 @@ def _paint_geometric(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rn
 
 def _paint_circles(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
     """Concentric dot grid."""
-    spacing = rng.randint(80, 140)
-    radius = rng.randint(6, 16)
+    spacing = rng.randint(40, 70)
+    radius = rng.randint(3, 8)
     for row in range(-1, H // spacing + 2):
         for col in range(-1, W // spacing + 2):
-            cx = col * spacing + rng.randint(-15, 15)
-            cy = row * spacing + rng.randint(-15, 15)
+            cx = col * spacing + rng.randint(-7, 7)
+            cy = row * spacing + rng.randint(-7, 7)
             alpha = rng.randint(30, 80)
             draw.ellipse([cx - radius, cy - radius, cx + radius, cy + radius],
                          fill=accent + (alpha,))
@@ -161,8 +161,8 @@ def _paint_circles(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random)
 
 def _paint_lines(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
     """Diagonal scan-line texture."""
-    gap = rng.randint(30, 80)
-    width = rng.randint(3, 8)
+    gap = rng.randint(15, 40)
+    width = rng.randint(1, 4)
     alpha = rng.randint(25, 55)
     angle = rng.choice([30, 45, 60, 135, -45])
     for i in range(-H, W + H, gap):
@@ -173,10 +173,10 @@ def _paint_lines(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
 
 
 def _paint_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
-    amp = rng.randint(50, 150)
-    freq = rng.uniform(0.002, 0.006)
+    amp = rng.randint(25, 75)
+    freq = rng.uniform(0.004, 0.012)
     phase = rng.uniform(0, 2 * math.pi)
-    gap = rng.randint(80, 160)
+    gap = rng.randint(40, 80)
     alpha = rng.randint(30, 60)
     for wave_y in range(0, H + gap, gap):
         pts = []
@@ -184,14 +184,14 @@ def _paint_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Random):
             y = wave_y + amp * math.sin(freq * x + phase)
             pts.append((x, int(y)))
         if len(pts) > 1:
-            draw.line(pts, fill=accent + (alpha,), width=rng.randint(3, 8))
+            draw.line(pts, fill=accent + (alpha,), width=rng.randint(1, 4))
 
 
 def _paint_border(draw: ImageDraw.ImageDraw, border: tuple, accent: tuple, rng: random.Random):
     """Layered decorative border."""
-    margin = rng.randint(50, 120)
-    thickness = rng.randint(10, 25)
-    inner_gap = rng.randint(15, 35)
+    margin = rng.randint(25, 60)
+    thickness = rng.randint(5, 12)
+    inner_gap = rng.randint(7, 17)
 
     # Outer frame
     draw.rectangle([margin, margin, W - margin, H - margin],
@@ -235,7 +235,7 @@ def _paint_diagonal_split(draw: ImageDraw.ImageDraw, bg: tuple, accent: tuple, b
     ])
     draw.polygon(config, fill=accent + (220,))
     # Draw separating line
-    line_width = rng.randint(10, 24)
+    line_width = rng.randint(5, 12)
     draw.line([config[0], config[2] if len(config) > 2 else config[1]], fill=border + (255,), width=line_width)
 
 
@@ -245,19 +245,19 @@ def _paint_drip_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Rand
     wave_h = rng.randint(H // 4, H // 2)
     
     pts = []
-    amp = rng.randint(80, 200)
-    freq = rng.uniform(0.002, 0.005)
+    amp = rng.randint(40, 100)
+    freq = rng.uniform(0.004, 0.010)
     phase = rng.uniform(0, 2 * math.pi)
     
     if position == "top":
         pts.append((0, 0))
-        for x in range(0, W + 20, 20):
+        for x in range(0, W + 10, 10):
             y = wave_h + amp * math.sin(freq * x + phase)
             pts.append((x, int(y)))
         pts.append((W, 0))
     else:
         pts.append((W, H))
-        for x in range(W, -20, -20):
+        for x in range(W, -10, -10):
             y = H - wave_h + amp * math.sin(freq * x + phase)
             pts.append((x, int(y)))
         pts.append((0, H))
@@ -267,10 +267,10 @@ def _paint_drip_waves(draw: ImageDraw.ImageDraw, accent: tuple, rng: random.Rand
     # Add hanging rounded drips
     drip_count = rng.randint(5, 12)
     for _ in range(drip_count):
-        dx = rng.randint(100, W - 100)
+        dx = rng.randint(50, W - 50)
         dy = wave_h + amp * math.sin(freq * dx + phase) if position == "top" else (H - wave_h + amp * math.sin(freq * dx + phase))
-        drip_length = rng.randint(80, 300)
-        drip_w = rng.randint(25, 70)
+        drip_length = rng.randint(40, 150)
+        drip_w = rng.randint(12, 35)
         
         if position == "top":
             draw.line([(dx, int(dy)), (dx, int(dy + drip_length))], fill=accent + (230,), width=drip_w)
@@ -284,8 +284,8 @@ def _paint_cosmic_aurora(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple
     """Overlapping cosmic aurora wave flows + stars inspired by Aqua (Image 2)"""
     wave_count = rng.randint(2, 4)
     for w in range(wave_count):
-        amp = rng.randint(150, 350)
-        freq = rng.uniform(0.001, 0.003)
+        amp = rng.randint(75, 175)
+        freq = rng.uniform(0.002, 0.006)
         phase = rng.uniform(0, 2 * math.pi) + w * 1.5
         base_y = rng.randint(H // 3, 2 * H // 3)
         alpha = rng.randint(65, 125)
@@ -293,7 +293,7 @@ def _paint_cosmic_aurora(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple
         
         pts = []
         pts.append((0, H))
-        for x in range(0, W + 40, 40):
+        for x in range(0, W + 20, 20):
             y = base_y + amp * math.sin(freq * x + phase)
             pts.append((x, int(y)))
         pts.append((W, H))
@@ -302,27 +302,27 @@ def _paint_cosmic_aurora(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple
     # Draw four-pointed stars
     star_count = rng.randint(15, 30)
     for _ in range(star_count):
-        sx = rng.randint(100, W - 100)
-        sy = rng.randint(100, H - 100)
-        size = rng.randint(15, 45)
+        sx = rng.randint(50, W - 50)
+        sy = rng.randint(50, H - 50)
+        size = rng.randint(8, 24)
         alpha = rng.randint(120, 255)
-        draw.line([(sx - size, sy), (sx + size, sy)], fill=(255, 255, 255, alpha), width=5)
-        draw.line([(sx, sy - size), (sx, sy + size)], fill=(255, 255, 255, alpha), width=5)
+        draw.line([(sx - size, sy), (sx + size, sy)], fill=(255, 255, 255, alpha), width=3)
+        draw.line([(sx, sy - size), (sx, sy + size)], fill=(255, 255, 255, alpha), width=3)
 
 
 def _paint_product_badge(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple, rng: random.Random):
     """Decorative badge elements inspired by Cafe (Image 4) and Juice (Image 5)"""
     badge_type = rng.choice(["shield", "diamond", "circle"])
     cx, cy = W // 2, H // 2
-    size = rng.randint(500, 800)
+    size = rng.randint(250, 400)
     alpha = rng.randint(180, 245)
     
     if badge_type == "circle":
-        draw.ellipse([cx - size, cy - size, cx + size, cy + size], outline=border + (255,), width=24)
-        draw.ellipse([cx - size + 30, cy - size + 30, cx + size - 30, cy + size - 30], fill=accent + (alpha,))
+        draw.ellipse([cx - size, cy - size, cx + size, cy + size], outline=border + (255,), width=12)
+        draw.ellipse([cx - size + 15, cy - size + 15, cx + size - 15, cy + size - 15], fill=accent + (alpha,))
     elif badge_type == "diamond":
         pts = [(cx, cy - size), (cx + size, cy), (cx, cy + size), (cx - size, cy)]
-        draw.polygon(pts, outline=border + (255,), fill=accent + (alpha,), width=24)
+        draw.polygon(pts, outline=border + (255,), fill=accent + (alpha,), width=12)
     else:  # shield
         pts = [
             (cx - size, cy - size),
@@ -331,7 +331,7 @@ def _paint_product_badge(draw: ImageDraw.ImageDraw, accent: tuple, border: tuple
             (cx, cy + size),
             (cx - size, cy + size // 2)
         ]
-        draw.polygon(pts, outline=border + (255,), fill=accent + (alpha,), width=24)
+        draw.polygon(pts, outline=border + (255,), fill=accent + (alpha,), width=12)
 
 
 # ────────────────────────────────────────────────────────────────
@@ -434,3 +434,54 @@ def generate_all_designs(variants_per_combo: int = 3) -> list[dict]:
                     "colors":    [bg_hex, accent_hex, border_hex],
                 })
     return results
+
+
+def draw_text_on_label(base_image_path: str, out_image_path: str, brand_name: str, tagline: str, text_color_hex: str):
+    """
+    Draw brand_name and tagline centered onto the label background image and save.
+    Uses NotoSans.ttf if available. Runs in ~5ms.
+    """
+    from PIL import ImageFont
+    
+    img = Image.open(base_image_path)
+    draw = ImageDraw.Draw(img)
+    
+    # Load Font
+    try:
+        font_dir = os.path.dirname(__file__)
+        font_path = os.path.join(font_dir, "..", "static", "NotoSans.ttf")
+        title_font = ImageFont.truetype(font_path, 90)
+        sub_font = ImageFont.truetype(font_path, 40)
+    except Exception:
+        title_font = ImageFont.load_default()
+        sub_font = ImageFont.load_default()
+
+    # Hex to RGB
+    h = text_color_hex.lstrip("#")
+    color = tuple(int(h[i:i+2], 16) for i in (0, 2, 4)) if text_color_hex else (255, 255, 255)
+
+    # Centering math
+    cx, cy = img.width // 2, img.height // 2
+
+    # Draw Brand Name
+    brand_text = brand_name.upper()
+    try:
+        left, top, right, bottom = draw.textbbox((0, 0), brand_text, font=title_font)
+        bw, bh = right - left, bottom - top
+    except AttributeError:
+        bw, bh = draw.textsize(brand_text, font=title_font)
+        
+    draw.text((cx - bw // 2, cy - bh // 2 - 40), brand_text, fill=color, font=title_font)
+
+    # Draw Tagline
+    if tagline:
+        tag_text = tagline.upper()
+        try:
+            left, top, right, bottom = draw.textbbox((0, 0), tag_text, font=sub_font)
+            sw, sh = right - left, bottom - top
+        except AttributeError:
+            sw, sh = draw.textsize(tag_text, font=sub_font)
+        draw.text((cx - sw // 2, cy - sh // 2 + 80), tag_text, fill=color, font=sub_font)
+
+    img.save(out_image_path, "PNG")
+

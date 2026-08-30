@@ -141,41 +141,6 @@ export default function DesignCard({ design }) {
               style={{ width: '100%', height: '100%', objectFit: 'cover', color: 'transparent', backgroundColor: '#e2e8f0' }}
               onError={(e) => { e.target.style.opacity = 0; }} onLoad={(e) => { e.target.style.opacity = 1; }} 
             />
-            
-            {/* Dynamic Text Overlay on the Label */}
-            {design.business_name && (
-              <div className="dynamic-label-text" style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                textAlign: 'center',
-                width: '100%',
-                pointerEvents: 'none',
-                zIndex: 5,
-                transition: 'opacity 0.2s ease'
-              }}>
-                <h2 style={{
-                  color: '#fff',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)',
-                  margin: 0,
-                  fontSize: '0.85rem',
-                  fontWeight: 800,
-                  lineHeight: '1.1',
-                  fontFamily: 'Montserrat, sans-serif'
-                }}>{design.business_name.toUpperCase()}</h2>
-                {design.bottle_text && (
-                  <p style={{
-                    color: '#fff',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.8)',
-                    margin: '2px 0 0 0',
-                    fontSize: '0.5rem',
-                    fontFamily: 'Inter, sans-serif',
-                    opacity: 0.9
-                  }}>{design.bottle_text}</p>
-                )}
-              </div>
-            )}
           </div>
           
           {/* Glass Glare Highlight */}
