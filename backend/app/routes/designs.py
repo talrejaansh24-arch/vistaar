@@ -58,19 +58,15 @@ def generate(
             img_files = list(cat_dir.glob("*.png")) + list(cat_dir.glob("*.jpg")) + list(cat_dir.glob("*.jpeg"))
             uploaded_images = [str(p) for p in img_files]
 
-    # 2. Generate procedural designs (will use uploaded_images if available)
-    designs_data = generate_designs(
-        business_name=data.business_name,
-        bottle_text=data.bottle_text,
-        category=data.category,
-        bottle_size=data.bottle_size,
-        style=data.style,
-        uploaded_images=uploaded_images
-    )
-    procedural_designs = [GeneratedDesign(**d) for d in designs_data]
+    # 2. Return ONLY the crisp 4K database designs, remove procedural blurry designs
+    import random
+    
+    # Optionally shuffle if there are many to make it look dynamic
+    if len(db_designs) > 8:
+        random.shuffle(db_designs)
+        db_designs = db_designs[:15] # Return top 15 results
 
-    # Combine: put database templates first, then fill up with procedural ones
-    all_combined = db_designs + procedural_designs
+    all_combined = db_designs
 
     return DesignGenerateResponse(designs=all_combined, count=len(all_combined))
 
@@ -115,16 +111,21 @@ def generate_template(data: TemplateSearchRequest):
     elif any(word in query_lower for word in ["corporate", "business"]):
         category = "corporate"
 
-    designs_data = generate_designs(
-        business_name=data.query.upper()[:15] if data.query else "TEMPLATE",
-        bottle_text="Premium Quality",
-        category=category,
-        bottle_size="500ml",
-        style="modern",
-        count=data.count,
-    )
+    db = next(get_db())
+    db_templates = db.query(DesignTemplate).filter(DesignTemplate.category == category).limit(data.count).all()
+    designs = []
+    for t in db_templates:
+        designs.append(GeneratedDesign(
+            id=f"db_{t.id}",
+            name=t.name,
+            preview_url=t.file_path,
+            style=t.style or "modern",
+            colors=t.colors or ["#ffffff", "#000000"],
+            template_id=t.id,
+            business_name=data.query.upper()[:15] if data.query else "TEMPLATE",
+            bottle_text="Premium Quality"
+        ))
 
-    designs = [GeneratedDesign(**d) for d in designs_data]
     return DesignGenerateResponse(designs=designs, count=len(designs))
 
 
