@@ -37,18 +37,44 @@ def generate(
         .all()
     )
 
-    # If nothing in DB yet (first boot worker still running), fallback to any category match
+    # On-the-fly generation fallback: If no templates exist for this combo, generate 3 instantly!
+    if not templates:
+        try:
+            from app.services.design_painter import generate_label_design, PALETTES
+            palette_list = PALETTES.get(category, PALETTES["general"]).get(style, PALETTES["general"]["modern"])
+            
+            # Generate 3 variants on-the-fly and save to DB
+            for v in range(min(3, len(palette_list))):
+                path = generate_label_design(category, style, v)
+                bg_hex, accent_hex, border_hex = palette_list[v % len(palette_list)]
+                name = f"{category.title()} {style.title()} #{v + 1}"
+                file_url = f"/static/generated/label_{category}_{style}_{v}.png"
+                
+                # Check for existing to avoid duplicates
+                existing = db.query(DesignTemplate).filter_by(category=category, style=style, name=name).first()
+                if not existing:
+                    db.add(DesignTemplate(
+                        name=name,
+                        category=category,
+                        style=style,
+                        file_path=file_url,
+                        colors=[bg_hex, accent_hex, border_hex]
+                    ))
+            db.commit()
+            
+            # Re-query
+            templates = db.query(DesignTemplate).filter_by(category=category, style=style).all()
+        except Exception as e:
+            print(f"Error generating templates on-the-fly: {e}")
+
+    # If still nothing, fallback to general category
     if not templates:
         templates = (
             db.query(DesignTemplate)
-            .filter(DesignTemplate.category == category)
-            .limit(6)
+            .filter(DesignTemplate.category == "general")
+            .limit(3)
             .all()
         )
-
-    # Still nothing? Return a gentle empty response — worker will populate soon
-    if not templates:
-        return DesignGenerateResponse(designs=[], count=0)
 
     designs_out: list[GeneratedDesign] = []
     for tpl in templates:
@@ -88,41 +114,67 @@ def generate_ai(data: AIDesignGenerateRequest):
 
 
 @router.post("/generate-template", response_model=DesignGenerateResponse)
-def generate_template(data: TemplateSearchRequest):
-    """Generate design mockups as templates based on a search query."""
-    # Map search query to a category or just use it as the business name for now
-    # to simulate an AI generating a template for that specific vibe.
+def generate_template(
+    data: TemplateSearchRequest,
+    db: Session = Depends(get_db)
+):
+    """Generate or retrieve templates locally matching a category/vibe query."""
+    query_lower = data.query.lower() if data.query else ""
     category = "general"
-    query_lower = data.query.lower()
-    if any(word in query_lower for word in ["hotel", "resort"]):
+    if any(word in query_lower for word in ["hotel", "resort", "palace"]):
         category = "hotel"
-    elif any(word in query_lower for word in ["restaurant", "food", "dine"]):
+    elif any(word in query_lower for word in ["restaurant", "food", "dine", "eat"]):
         category = "restaurant"
-    elif any(word in query_lower for word in ["cafe", "coffee"]):
+    elif any(word in query_lower for word in ["cafe", "coffee", "tea", "boba"]):
         category = "cafe"
-    elif any(word in query_lower for word in ["event", "party", "wedding"]):
+    elif any(word in query_lower for word in ["event", "party", "wedding", "marriage"]):
         category = "event"
-    elif any(word in query_lower for word in ["gym", "fitness", "sport"]):
+    elif any(word in query_lower for word in ["gym", "workout", "crossfit"]):
         category = "gym"
-    elif any(word in query_lower for word in ["corporate", "business"]):
+    elif any(word in query_lower for word in ["fitness", "yoga", "health"]):
+        category = "fitness"
+    elif any(word in query_lower for word in ["corporate", "business", "office"]):
         category = "corporate"
 
-    # Since we are prioritizing dynamically editable AI generations:
-    from app.services.gemini_image_service import generate_ai_designs
-    
-    prompt = f"abstract {category} design"
-    
-    designs_data = generate_ai_designs(
-        prompt=prompt,
-        business_name=data.query.upper()[:15] if data.query else "TEMPLATE",
-        count=data.count,
-        detail="high",
-        category=category,
-        style="modern",
-        enhance_prompt=False
-    )
-    
-    designs = [GeneratedDesign(**d) for d in designs_data]
+    # Query DB for category templates
+    templates = db.query(DesignTemplate).filter(DesignTemplate.category == category).all()
+
+    # On-the-fly fallback if templates for search category aren't in DB yet
+    if not templates:
+        try:
+            from app.services.design_painter import generate_label_design, PALETTES
+            style = "modern"
+            palette_list = PALETTES.get(category, PALETTES["general"]).get(style, PALETTES["general"]["modern"])
+            for v in range(min(3, len(palette_list))):
+                generate_label_design(category, style, v)
+                bg_hex, accent_hex, border_hex = palette_list[v % len(palette_list)]
+                name = f"{category.title()} {style.title()} #{v + 1}"
+                file_url = f"/static/generated/label_{category}_{style}_{v}.png"
+                
+                existing = db.query(DesignTemplate).filter_by(category=category, style=style, name=name).first()
+                if not existing:
+                    db.add(DesignTemplate(
+                        name=name, category=category, style=style, file_path=file_url,
+                        colors=[bg_hex, accent_hex, border_hex]
+                    ))
+            db.commit()
+            templates = db.query(DesignTemplate).filter(DesignTemplate.category == category).all()
+        except Exception as e:
+            print(f"Error generating search template on-the-fly: {e}")
+
+    designs = []
+    for tpl in templates:
+        designs.append(GeneratedDesign(
+            id=f"tpl_{tpl.id}",
+            name=f"{tpl.name} – {data.query.upper() if data.query else 'TEMPLATE'}",
+            preview_url=tpl.file_path,
+            base_image_url=tpl.file_path,
+            style=tpl.style or "modern",
+            colors=tpl.colors or ["#ffffff", "#000000"],
+            template_id=tpl.id,
+            business_name=data.query.upper() if data.query else "TEMPLATE",
+            bottle_text=""
+        ))
 
     return DesignGenerateResponse(designs=designs, count=len(designs))
 
