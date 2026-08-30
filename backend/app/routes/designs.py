@@ -23,28 +23,48 @@ def generate(
     data: DesignGenerateRequest,
     db: Session = Depends(get_db),
 ):
-    """Generate design mockups based on user input."""
-    # Since static images are uneditable, we let the AI generate a custom flat background label dynamically!
-    from app.services.gemini_image_service import generate_ai_designs
-    
-    # Construct a descriptive prompt for the label texture
-    prompt = f"{data.style} {data.category} label background"
-    
-    designs_data = generate_ai_designs(
-        prompt=prompt,
-        business_name=data.business_name or "BRAND",
-        count=6,
-        detail="high",
-        category=data.category or "general",
-        style=data.style or "modern",
-        enhance_prompt=False
-    )
-    
-    # Convert dicts to GeneratedDesign models
-    all_combined = [GeneratedDesign(**d) for d in designs_data]
-    
-    return DesignGenerateResponse(designs=all_combined, count=len(all_combined))
+    """Return pre-generated label designs matching the user's category + style."""
+    category = (data.category or "general").lower()
+    style    = (data.style or "modern").lower()
 
+    # Query DB for matching templates
+    templates = (
+        db.query(DesignTemplate)
+        .filter(
+            DesignTemplate.category == category,
+            DesignTemplate.style    == style,
+        )
+        .all()
+    )
+
+    # If nothing in DB yet (first boot worker still running), fallback to any category match
+    if not templates:
+        templates = (
+            db.query(DesignTemplate)
+            .filter(DesignTemplate.category == category)
+            .limit(6)
+            .all()
+        )
+
+    # Still nothing? Return a gentle empty response — worker will populate soon
+    if not templates:
+        return DesignGenerateResponse(designs=[], count=0)
+
+    designs_out: list[GeneratedDesign] = []
+    for tpl in templates:
+        designs_out.append(GeneratedDesign(
+            id=f"tpl_{tpl.id}",
+            name=f"{tpl.name} – {data.business_name or 'YOUR BRAND'}",
+            preview_url=tpl.file_path,
+            base_image_url=tpl.file_path,
+            style=tpl.style or style,
+            colors=tpl.colors or ["#ffffff", "#000000"],
+            template_id=tpl.id,
+            business_name=data.business_name or "YOUR BRAND",
+            bottle_text=data.bottle_text or "",
+        ))
+
+    return DesignGenerateResponse(designs=designs_out, count=len(designs_out))
 
 
 @router.post("/generate-ai", response_model=DesignGenerateResponse)

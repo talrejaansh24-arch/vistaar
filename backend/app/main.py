@@ -155,6 +155,13 @@ async def startup_event():
         print(f"[startup] Error creating tables: {e}")
         return
 
+    # Start the daily design generator worker
+    try:
+        from app.workers.design_worker import start_scheduler
+        start_scheduler()
+    except Exception as e:
+        print(f"[startup] Design worker failed to start: {e}")
+
     # Migration: add is_suspended, session_version, and is_logged_in columns if missing
     try:
         from sqlalchemy import text
