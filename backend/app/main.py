@@ -274,13 +274,6 @@ async def startup_event():
                 db.add(SiteConfig(key=k, value=v))
                 print(f"Auto-seeded default pricing key: {k} = {v}")
 
-        # Generate fresh daily design templates if DB is empty
-        from app.models import DesignTemplate
-        if db.query(DesignTemplate).count() == 0:
-            print("Templates DB is empty! Running initial programmatic label design generation...")
-            from app.workers.design_worker import run_generation
-            run_generation(variants_per_combo=3)
-
         db.commit()
         db.close()
     except Exception as e:
